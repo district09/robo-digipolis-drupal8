@@ -1,0 +1,14 @@
+digipolis.themes.drupal8:
+    odp_theme: 'build'
+remote:
+  appdir: '/home/[user]/apps/[app]'
+  releasesdir: '${remote.appdir}/releases'
+  webdir: '${remote.releasesdir}/[time]/web'
+  currentdir: '${remote.appdir}/current'
+  configdir: '${remote.appdir}/config'
+  filesdir: '${remote.appdir}/files'
+  backupsdir: '${remote.appdir}/backups'
+  symlinks:
+    - '${remote.webdir}:${remote.currentdir}'
+    - '${remote.configdir}/settings.php:${remote.webdir}/sites/default/settings.php'
+    - '${remote.filesdir}/public:${remote.webdir}/sites/default/files'

@@ -1,0 +1,41 @@
+engines:
+  phpcodesniffer:
+    enabled: true
+    config:
+      standard: "PSR1,PSR2"
+  phpmd:
+    enabled: true
+    checks:
+      CleanCode/StaticAccess:
+        enabled: false
+      Naming/ShortVariable:
+        enabled: false
+      Naming/ShortMethodName:
+        enabled: false
+      Naming/BooleanGetMethodName:
+        enabled: false
+      CleanCode/BooleanArgumentFlag:
+        enabled: false
+      Design/TooManyPublicMethods:
+        enabled: false
+  duplication:
+    enabled: true
+    config:
+      languages:
+        php:
+          mass_threshold: 50
+  fixme:
+    enabled: true
+  markdownlint:
+    enabled: true
+    checks:
+      MD024:
+        enabled: false
+ratings:
+  paths:
+  - "**.php"
+  - "**.md"
+exclude_paths:
+- "**/vendor/**/*"
+- "**/.idea/**/*"
+- "tests/"
