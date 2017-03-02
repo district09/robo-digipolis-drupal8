@@ -10,3 +10,6 @@ remote:
     - '${remote.webdir}:${remote.currentdir}'
     - '${remote.configdir}/settings.php:${remote.webdir}/sites/default/settings.php'
     - '${remote.filesdir}/public:${remote.webdir}/sites/default/files'
+  opcache:
+    env: 'fcgi'
+    host: '/var/run/php_fpm_[user].sock'

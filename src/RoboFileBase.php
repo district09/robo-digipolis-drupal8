@@ -5,6 +5,7 @@ namespace DigipolisGent\Robo\Drupal8;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
 use DigipolisGent\Robo\Task\General\Common\DigipolisPropertiesAwareInterface;
 use Robo\Contract\ConfigAwareInterface;
+use Symfony\Component\Finder\Finder;
 
 class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterface, ConfigAwareInterface
 {
@@ -17,6 +18,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
     use \DigipolisGent\Robo\Task\Deploy\Commands\loadCommands;
     use \DigipolisGent\Robo\Task\Deploy\Traits\SshTrait;
     use \DigipolisGent\Robo\Task\Deploy\Traits\ScpTrait;
+    use \Robo\Task\Base\loadTasks;
 
     /**
      * Stores the request time.
@@ -88,7 +90,6 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
             ->wasSuccessful();
         if ($status) {
             $collection->addTask($this->digipolisBackupDrupal8($worker, $user, $privateKeyFile, $opts));
-            // TODO: reset current symlink in rollback!
             $collection->rollback(
                 $this->digipolisRestoreBackupDrupal8(
                     $worker,
@@ -96,6 +97,16 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
                     $privateKeyFile,
                     $opts + ['timestamp' => $this->time]
                 )
+            );
+            // Switch the current symlink to the previous release.
+            $collection->rollback(
+                $this->taskSsh($worker, $auth)
+                    ->remoteDirectory($currentProjectRoot, true)
+                    ->exec(
+                        'vendor/bin/robo digipolis:switch-previous '
+                        . $remote['releasesdir']
+                        . ' ' . $remote['currentdir']
+                    )
             );
         }
         foreach ($servers as $server) {
@@ -110,9 +121,51 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
             }
         }
         $collection->addTask($this->digipolisInitDrupal8Remote($worker, $user, $privateKeyFile, $opts));
+        // Clear opcache.
+        if (isset($remote['opcache'])) {
+            $this->taskClearOpCache(
+                $remote['opcache']['env'],
+                isset($remote['opcache']['host'])
+                    ? $remote['opcache']['host']
+                    : null
+            );
+        }
         // Keep only the last 5 releases and the last 5 backups.
         $collection->taskPartialCleanDirs([$remote['releasesdir'], $remote['backupsdir']]);
         return $collection;
+    }
+
+    /**
+     * Switch the current release symlink to the previous release.
+     *
+     * @param string $releasesDir
+     *   Path to the folder containing all releases.
+     * @param string $currentSymlink
+     *   Path to the current release symlink.
+     */
+    public function digipolisSwitchPrevious($releasesDir, $currentSymlink)
+    {
+        $finder = new Finder();
+        // Get all releases.
+        $releases = iterator_to_array(
+            $finder
+                ->directories()
+                ->in($releasesDir)
+                ->sortByName()
+                ->depth(0)
+                ->getIterator()
+        );
+        // Last element is the current release.
+        array_pop($releases);
+        // Normalize the paths.
+        $currentDir = realpath($currentSymlink);
+        $releasesDir = realpath($releasesDir);
+        // Get the right folder within the release dir to symlink.
+        $relativeWebDir = substr($currentDir, 0, strlen($releasesDir));
+        $previous = end($releases)->getRealPath() . $relativeWebDir;
+
+        return $this->taskExec('ln -s -T -f ' . $previous . ' ' . $currentSymlink)
+            ->run();
     }
 
     /**
