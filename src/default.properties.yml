@@ -1,5 +1,3 @@
-digipolis.themes.drupal8:
-    odp_theme: 'build'
 remote:
   appdir: '/home/[user]/apps/[app]'
   releasesdir: '${remote.appdir}/releases'
