@@ -9,7 +9,8 @@
         "digipolisgent/robo-digipolis-package-drupal8": "^0.1",
         "digipolisgent/robo-digipolis-deploy": "^0.1",
         "digipolisgent/robo-digipolis-general": "^0.1",
-        "gordalina/cachetool": "^2.1|^1.11"
+        "gordalina/cachetool": "^2.1|^1.11",
+        "grasmash/yaml-expander": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "~4.4",
