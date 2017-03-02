@@ -89,7 +89,14 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         if ($status) {
             $collection->addTask($this->digipolisBackupDrupal8($worker, $user, $privateKeyFile, $opts));
             // TODO: reset current symlink in rollback!
-            $collection->rollback($this->digipolisRestoreBackupDrupal8($worker, $user, $privateKeyFile, $opts + ['timestamp' => $this->time]));
+            $collection->rollback(
+                $this->digipolisRestoreBackupDrupal8(
+                    $worker,
+                    $user,
+                    $privateKeyFile,
+                    $opts + ['timestamp' => $this->time]
+                )
+            );
         }
         foreach ($servers as $server) {
             $collection
@@ -103,6 +110,8 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
             }
         }
         $collection->addTask($this->digipolisInitDrupal8Remote($worker, $user, $privateKeyFile, $opts));
+        // Keep only the last 5 releases and the last 5 backups.
+        $collection->taskPartialCleanDirs([$remote['releasesdir'], $remote['backupsdir']]);
         return $collection;
     }
 
@@ -205,7 +214,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
      * the site in maintenance mode before the update and takes in out of
      * maintenance mode after.
      */
-    function digipolisUpdateDrupal8()
+    public function digipolisUpdateDrupal8()
     {
         $this->readProperties();
         return $this->taskDrupalConsoleStack('vendor/bin/drupal')
@@ -229,7 +238,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
      * @option force Force the installation. This will drop all tables in the
      *   current database.
      */
-    function digipolisInstallDrupal8($profile = 'standard', $opts = ['site-name' => 'Drupal', 'force' => false])
+    public function digipolisInstallDrupal8($profile = 'standard', $opts = ['site-name' => 'Drupal', 'force' => false])
     {
         $this->readProperties();
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
@@ -280,7 +289,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
      *   The name of the destination app we're syncing. Used to determine the
      *   directory to sync to.
      */
-    function digipolisSyncDrupal8(
+    public function digipolisSyncDrupal8(
         $sourceUser,
         $sourceHost,
         $sourceKeyFile,
@@ -389,8 +398,15 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
      *
      * @see digipolisBackupDrupal8
      */
-    public function digipolisRestoreBackupDrupal8($host, $user, $keyFile, $opts = ['app' => 'default', 'timestamp' => null])
-    {
+    public function digipolisRestoreBackupDrupal8(
+        $host,
+        $user,
+        $keyFile,
+        $opts = [
+            'app' => 'default',
+            'timestamp' => null,
+        ]
+    ) {
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
 
         $currentProjectRoot = $remote['currentdir'] . '/..';
@@ -440,8 +456,15 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
      *
      * @see digipolisBackupDrupal8
      */
-    public function digipolisDownloadBackupDrupal8($host, $user, $keyFile, $opts = ['app' => 'default', 'timestamp' => null])
-    {
+    public function digipolisDownloadBackupDrupal8(
+        $host,
+        $user,
+        $keyFile,
+        $opts = [
+            'app' => 'default',
+            'timestamp' => null,
+        ]
+    ) {
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
 
@@ -475,8 +498,15 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
      *
      * @see digipolisBackupDrupal8
      */
-    public function digipolisUploadBackupDrupal8($host, $user, $keyFile, $opts = ['app' => 'default', 'timestamp' => null])
-    {
+    public function digipolisUploadBackupDrupal8(
+        $host,
+        $user,
+        $keyFile,
+        $opts = [
+            'app' => 'default',
+            'timestamp' => null,
+        ]
+    ) {
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
 
