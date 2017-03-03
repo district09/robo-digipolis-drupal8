@@ -231,6 +231,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
             ->exec('vendor/bin/drupal site:status')
             ->run()
             ->wasSuccessful();
+        $collection = $this->collectionBuilder();
         if ($opts['force-install'] || !$status) {
             $this->say(!$status ? 'Site status failed.' : 'Force install option given.');
             $this->say('Triggering install script.');
@@ -238,14 +239,13 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
               . escapeshellarg($opts['profile'])
               . ' --site-name=' . escapeshellarg($opts['site-name'])
               . ($opts['force-install'] ? ' --force' : '' );
-            return $this->taskSsh($server, $auth)
+            $collection->taskSsh($server, $auth)
                 ->remoteDirectory($currentProjectRoot, true)
                 // Install can take a long time. Let's set it to 15 minutes.
                 ->timeout(900)
-                ->exec($install)
-                ->run();
+                ->exec($install);
+            return $collection;
         }
-        $collection = $this->collectionBuilder();
         $collection
             ->taskSsh($server, $auth)
                 ->remoteDirectory($currentProjectRoot, true)
