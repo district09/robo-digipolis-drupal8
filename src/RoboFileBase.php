@@ -121,17 +121,19 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
             }
         }
         $collection->addTask($this->digipolisInitDrupal8Remote($worker, $user, $privateKeyFile, $opts));
-        // Clear opcache.
+        $clearOpcache = 'vendor/bin/drupal digipolis:clear-op-cache ' . $remote['opcache']['env'];
         if (isset($remote['opcache'])) {
-            $this->taskClearOpCache(
-                $remote['opcache']['env'],
-                isset($remote['opcache']['host'])
-                    ? $remote['opcache']['host']
-                    : null
-            );
+            if ( isset($remote['opcache']['host'])) {
+                $clearOpcache .= ' --host=' . $remote['opcache']['host'];
+            }
+            $collection->taskSsh($worker, $auth)
+                ->remoteDirectory($currentProjectRoot, true)
+                ->exec($clearOpcache);
         }
-        // Keep only the last 5 releases and the last 5 backups.
-        $collection->taskPartialCleanDirs([$remote['releasesdir'], $remote['backupsdir']]);
+        $collection->taskSsh($worker, $auth)
+                ->remoteDirectory($currentProjectRoot, true)
+                ->exec('vendor/bin/robo digipolis:clean-dir ' . $remote['releasesdir'])
+                ->exec('vendor/bin/robo digipolis:clean-dir ' . $remote['backupsdir']);
         return $collection;
     }
 
