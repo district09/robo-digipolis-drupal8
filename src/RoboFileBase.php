@@ -122,7 +122,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         }
         $collection->addTask($this->digipolisInitDrupal8Remote($worker, $user, $privateKeyFile, $opts));
         if (isset($remote['opcache'])) {
-            $clearOpcache = 'vendor/bin/drupal digipolis:clear-op-cache ' . $remote['opcache']['env'];
+            $clearOpcache = 'vendor/bin/robo digipolis:clear-op-cache ' . $remote['opcache']['env'];
             if ( isset($remote['opcache']['host'])) {
                 $clearOpcache .= ' --host=' . $remote['opcache']['host'];
             }
