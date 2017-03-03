@@ -133,6 +133,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         foreach ($servers as $server) {
             $collection->completion($this->taskSsh($server, $auth)
                 ->remoteDirectory($currentProjectRoot, true)
+                ->timeout(30)
                 ->exec('vendor/bin/robo digipolis:clean-dir ' . $remote['releasesdir'])
                 ->exec('vendor/bin/robo digipolis:clean-dir ' . $remote['backupsdir'])
             );
