@@ -163,7 +163,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         $currentDir = realpath($currentSymlink);
         $releasesDir = realpath($releasesDir);
         // Get the right folder within the release dir to symlink.
-        $relativeWebDir = substr($currentDir, 0, strlen($releasesDir));
+        $relativeWebDir = substr($currentDir, strlen($releasesDir));
         $previous = end($releases)->getRealPath() . $relativeWebDir;
 
         return $this->taskExec('ln -s -T -f ' . $previous . ' ' . $currentSymlink)
