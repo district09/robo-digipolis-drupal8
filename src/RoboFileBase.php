@@ -138,6 +138,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
                 ->exec('vendor/bin/robo digipolis:clean-dir ' . $remote['backupsdir'])
             );
         }
+        // Clear cache.
         $collection->completion($this->taskSsh($worker, $auth)
                 ->remoteDirectory($currentProjectRoot, true)
                 ->timeout(120)
@@ -313,6 +314,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         $site_path = null;
         include_once $webDir . '/sites/default/settings.php';
         $config = $databases['default']['default'];
+        $passGenerator = (new \RandomLib\Factory())->getGenerator(SecurityLib\Strength::MEDIUM);
         $task = $this->taskDrupalConsoleStack('vendor/bin/drupal')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbType($config['driver'])
@@ -323,6 +325,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
             ->dbPort($config['port'])
             ->dbPrefix($config['prefix'])
             ->siteName($opts['site-name'])
+            ->accountPass($passGenerator->generate(16))
             ->option('no-interaction');
         if ($opts['force']) {
             $task->option('force');
