@@ -296,9 +296,8 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
               ->updateDb()
             ->taskExecStack()
                 // Todo: find a way to do this with drupal console.
-                ->executable('vendor/bin/drush')
-                ->exec('locale-check')
-                ->exec('locale-update')
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance(false);
@@ -352,9 +351,8 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
               ->maintenance()
             ->taskExecStack()
                 // Todo: find a way to do this with drupal console.
-                ->executable('vendor/bin/drush')
-                ->exec('locale-check')
-                ->exec('locale-update')
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance(false);
