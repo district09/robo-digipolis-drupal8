@@ -138,6 +138,11 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
                 ->exec('vendor/bin/robo digipolis:clean-dir ' . $remote['backupsdir'])
             );
         }
+        $collection->completion($this->taskSsh($worker, $auth)
+                ->remoteDirectory($currentProjectRoot, true)
+                ->timeout(120)
+                ->exec('vendor/bin/drupal cache:rebuild')
+            );
         return $collection;
     }
 
