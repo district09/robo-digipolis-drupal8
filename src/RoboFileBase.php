@@ -256,6 +256,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
               . escapeshellarg($opts['profile'])
               . ' --site-name=' . escapeshellarg($opts['site-name'])
               . ($opts['force-install'] ? ' --force' : '' );
+
             $collection->taskSsh($server, $auth)
                 ->remoteDirectory($currentProjectRoot, true)
                 // Install can take a long time. Let's set it to 15 minutes.
@@ -287,13 +288,21 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
     public function digipolisUpdateDrupal8()
     {
         $this->readProperties();
-        return $this->taskDrupalConsoleStack('vendor/bin/drupal')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->maintenance()
-            ->updateDb()
-            ->maintenance(false)
-            ->stopOnFail()
-            ->run();
+        $collection = $this->collectionBuilder();
+        $collection
+            ->taskDrupalConsoleStack('vendor/bin/drupal')
+              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+              ->maintenance()
+              ->updateDb()
+            ->taskExecStack()
+                // Todo: find a way to do this with drupal console.
+                ->executable('vendor/bin/drush')
+                ->exec('locale-check')
+                ->exec('locale-update')
+            ->taskDrupalConsoleStack('vendor/bin/drupal')
+              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+              ->maintenance(false);
+        return $collection;
     }
 
     /**
@@ -318,26 +327,38 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         $config = $databases['default']['default'];
         $passGenerator = (new Factory())
             ->getGenerator(new Strength(Strength::MEDIUM));
-        $task = $this->taskDrupalConsoleStack('vendor/bin/drupal')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->dbType($config['driver'])
-            ->dbHost($config['host'])
-            ->dbName($config['database'])
-            ->dbUser($config['username'])
-            ->dbPass($config['password'])
-            ->dbPort($config['port'])
-            ->dbPrefix($config['prefix'])
-            ->siteName($opts['site-name'])
-            ->accountPass($passGenerator->generate(16))
-            ->option('no-interaction');
+        $collection = $this->collectionBuilder();
+        $collection
+            ->taskDrupalConsoleStack('vendor/bin/drupal')
+              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+              ->dbType($config['driver'])
+              ->dbHost($config['host'])
+              ->dbName($config['database'])
+              ->dbUser($config['username'])
+              ->dbPass($config['password'])
+              ->dbPort($config['port'])
+              ->dbPrefix($config['prefix'])
+              ->siteName($opts['site-name'])
+              ->accountPass($passGenerator->generate(16))
+              ->option('no-interaction');
         if ($opts['force']) {
-            $task->option('force');
+            $collection->option('force');
         }
-        $task
-            ->siteInstall($profile)
-            ->stopOnFail();
-
-        return $task->run();
+        $collection
+            ->siteInstall($profile);
+        $collection
+            ->taskDrupalConsoleStack('vendor/bin/drupal')
+              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+              ->maintenance()
+            ->taskExecStack()
+                // Todo: find a way to do this with drupal console.
+                ->executable('vendor/bin/drush')
+                ->exec('locale-check')
+                ->exec('locale-update')
+            ->taskDrupalConsoleStack('vendor/bin/drupal')
+              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+              ->maintenance(false);
+        return $collection;
     }
 
     /**
