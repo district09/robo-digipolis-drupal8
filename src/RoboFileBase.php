@@ -141,7 +141,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         $collection->completion($this->taskSsh($worker, $auth)
                 ->remoteDirectory($currentProjectRoot, true)
                 ->timeout(120)
-                ->exec('vendor/bin/drupal cache:rebuild')
+                ->exec('vendor/bin/drupal cache:rebuild all --no-interaction')
             );
         return $collection;
     }
