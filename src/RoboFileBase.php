@@ -4,7 +4,9 @@ namespace DigipolisGent\Robo\Drupal8;
 
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
 use DigipolisGent\Robo\Task\General\Common\DigipolisPropertiesAwareInterface;
+use RandomLib\Factory;
 use Robo\Contract\ConfigAwareInterface;
+use SecurityLib\Strength;
 use Symfony\Component\Finder\Finder;
 
 class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterface, ConfigAwareInterface
@@ -314,7 +316,8 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         $site_path = null;
         include_once $webDir . '/sites/default/settings.php';
         $config = $databases['default']['default'];
-        $passGenerator = (new \RandomLib\Factory())->getGenerator(\SecurityLib\Strength::MEDIUM);
+        $passGenerator = (new Factory())
+            ->getGenerator(new Strength(Strength::MEDIUM));
         $task = $this->taskDrupalConsoleStack('vendor/bin/drupal')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbType($config['driver'])
