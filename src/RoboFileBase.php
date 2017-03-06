@@ -314,7 +314,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         $site_path = null;
         include_once $webDir . '/sites/default/settings.php';
         $config = $databases['default']['default'];
-        $passGenerator = (new \RandomLib\Factory())->getGenerator(SecurityLib\Strength::MEDIUM);
+        $passGenerator = (new \RandomLib\Factory())->getGenerator(\SecurityLib\Strength::MEDIUM);
         $task = $this->taskDrupalConsoleStack('vendor/bin/drupal')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbType($config['driver'])
