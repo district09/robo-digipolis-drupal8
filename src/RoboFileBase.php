@@ -273,7 +273,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
         if ($opts['config-import']) {
             $collection->taskSsh($server, $auth)
                 ->remoteDirectory($currentProjectRoot, true)
-                ->exec('vendor/bin/drupal config:import --directory=../config');
+                ->exec('vendor/bin/drupal config:import');
         }
         return $collection;
     }
