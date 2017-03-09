@@ -7,7 +7,6 @@ use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\AbstractAuth;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
 use RandomLib\Factory;
 use SecurityLib\Strength;
-use Symfony\Component\Finder\Finder;
 
 class RoboFileBase extends AbstractRoboFile
 {
@@ -204,7 +203,7 @@ class RoboFileBase extends AbstractRoboFile
      * the site in maintenance mode before the update and takes in out of
      * maintenance mode after.
      */
-    public function digipolisUpdateDrupal8()
+    public function digipolisUpdateDrupal8($opts = ['config-import' => false])
     {
         $this->readProperties();
         $collection = $this->collectionBuilder();
@@ -212,7 +211,11 @@ class RoboFileBase extends AbstractRoboFile
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance()
-              ->updateDb()
+              ->updateDb();
+        if ($opts['config-import']) {
+            $collection->configImport();
+        }
+        $collection
             ->taskExecStack()
                 // Todo: find a way to do this with drupal console.
                 ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
@@ -437,5 +440,50 @@ class RoboFileBase extends AbstractRoboFile
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
         return $this->uploadBackupTask($host, $auth, $remote);
+    }
+
+    protected function defaultDbConfig()
+    {
+        $webDir = $this->getConfig()->get('digipolis.root.web', false);
+        if (!$webDir) {
+            return false;
+        }
+
+        $finder = new \Symfony\Component\Finder\Finder();
+        $finder->in($webDir . '/sites')->files()->name('settings.php');
+        foreach ($finder as $settingsFile) {
+            $site_path = null;
+            $app_root = null;
+            include_once $settingsFile->getRealpath();
+            break;
+        }
+        if (!isset($databases['default']['default'])) {
+            return false;
+        }
+        $config = $databases['default']['default'];
+        return [
+          'default' => [
+                'type' => $config['driver'],
+                'host' => $config['host'],
+                'port' => isset($config['port']) ? $config['port'] : '3306',
+                'user' => $config['username'],
+                'pass' => $config['password'],
+                'database' => $config['database'],
+                'structureTables' => [
+                    'batch',
+                    'cache',
+                    'cache_*',
+                    '*_cache',
+                    '*_cache_*',
+                    'flood',
+                    'search_dataset',
+                    'search_index',
+                    'search_total',
+                    'semaphore',
+                    'sessions',
+                    'watchdog',
+                ],
+            ]
+        ];
     }
 }
