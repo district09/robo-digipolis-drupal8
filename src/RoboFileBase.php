@@ -89,6 +89,7 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function clearCacheTask($worker, $auth, $remote)
     {
+        $currentProjectRoot = $remote['currentdir'] . '/..';
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentProjectRoot, true)
             ->timeout(120)
