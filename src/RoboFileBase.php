@@ -241,7 +241,8 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
     ) {
         $remote = $this->getRemoteSettings($server, $user, $privateKeyFile, $opts['app']);
         $currentProjectRoot = $remote['currentdir'] . '/..';
-        $update = 'vendor/bin/robo digipolis:update-drupal8';
+        $update = 'vendor/bin/robo digipolis:update-drupal8'
+            . ($opts['config-import'] ? ' --config-import' : '' );
         $auth = new KeyFile($user, $privateKeyFile);
         $status = $this->taskSsh($server, $auth)
             ->remoteDirectory($currentProjectRoot, true)
@@ -270,12 +271,6 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
                 // Updates can take a long time. Let's set it to 15 minutes.
                 ->timeout(900)
                 ->exec($update);
-        if ($opts['config-import']) {
-            $collection->taskSsh($server, $auth)
-                ->remoteDirectory($currentProjectRoot, true)
-                ->timeout(300)
-                ->exec('vendor/bin/drupal config:import');
-        }
         return $collection;
     }
 
@@ -286,7 +281,7 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
      * the site in maintenance mode before the update and takes in out of
      * maintenance mode after.
      */
-    public function digipolisUpdateDrupal8()
+    public function digipolisUpdateDrupal8($opts = ['config-import' => false])
     {
         $this->readProperties();
         $collection = $this->collectionBuilder();
@@ -294,7 +289,11 @@ class RoboFileBase extends \Robo\Tasks implements DigipolisPropertiesAwareInterf
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance()
-              ->updateDb()
+              ->updateDb();
+        if ($opts['config-import']) {
+            $collection->configImport();
+        }
+        $collection
             ->taskExecStack()
                 // Todo: find a way to do this with drupal console.
                 ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
