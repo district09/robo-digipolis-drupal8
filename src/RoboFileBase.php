@@ -72,6 +72,7 @@ class RoboFileBase extends AbstractRoboFile
         $extra += ['config-import' => false];
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $update = 'vendor/bin/robo digipolis:update-drupal8';
+        $update .= $extra['config-import'] ? ' --config-import' : '';
         $collection = $this->collectionBuilder();
         $collection
             ->taskSsh($worker, $auth)
@@ -79,11 +80,6 @@ class RoboFileBase extends AbstractRoboFile
                 // Updates can take a long time. Let's set it to 15 minutes.
                 ->timeout(900)
                 ->exec($update);
-        if ($extra['config-import']) {
-            $collection->taskSsh($worker, $auth)
-                ->remoteDirectory($currentProjectRoot, true)
-                ->exec('vendor/bin/drupal config:import');
-        }
         return $collection;
     }
 
