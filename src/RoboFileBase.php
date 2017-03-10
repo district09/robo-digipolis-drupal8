@@ -239,8 +239,8 @@ class RoboFileBase extends AbstractRoboFile
     {
         $this->readProperties();
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
-        $app_root = null;
-        $site_path = null;
+        $app_root = $webDir;
+        $site_path = 'sites/default';
         include_once $webDir . '/sites/default/settings.php';
         $config = $databases['default']['default'];
         $passGenerator = (new Factory())
