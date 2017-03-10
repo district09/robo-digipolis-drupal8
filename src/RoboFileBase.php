@@ -34,9 +34,10 @@ class RoboFileBase extends AbstractRoboFile
     {
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $collection = $this->collectionBuilder();
-        $collection->taskSsh($worker, $auth)
-            ->remoteDirectory($remote['filesdir'], true)
-            ->exec('rm -rf public/* private/* public/.??* private/.??');
+        $parent = parent::preRestoreBackupTask($worker, $auth, $remote);
+        if ($parent) {
+            $collection->addTask($parent);
+        }
 
         $collection
             ->taskSsh($worker, $auth)
@@ -44,12 +45,6 @@ class RoboFileBase extends AbstractRoboFile
                 ->timeout(60)
                 ->exec('vendor/bin/drupal database:drop -y');
         return $collection;
-    }
-
-    protected function preSymlinkTask($worker, AbstractAuth $auth, $remote)
-    {
-        return $this->taskSsh($worker, $auth)
-            ->exec('rm -rf ' . $remote['webdir'] . '/sites/default/files');
     }
 
     protected function installTask($worker, AbstractAuth $auth, $remote, $extra = [], $force = false)
