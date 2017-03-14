@@ -30,8 +30,19 @@ class RoboFileBase extends AbstractRoboFile
             ->wasSuccessful();
     }
 
-    protected function preRestoreBackupTask($worker, AbstractAuth $auth, $remote)
-    {
+    protected function preRestoreBackupTask(
+        $worker,
+        AbstractAuth $auth,
+        $remote,
+        $opts = ['files' => false, 'data' => false]
+    ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
+        if (!$opts['data']) {
+            return false;
+        }
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $collection = $this->collectionBuilder();
         $parent = parent::preRestoreBackupTask($worker, $auth, $remote);
@@ -303,8 +314,13 @@ class RoboFileBase extends AbstractRoboFile
         $destinationHost,
         $destinationKeyFile,
         $sourceApp = 'default',
-        $destinationApp = 'default'
+        $destinationApp = 'default',
+        $opts = ['files' => false, 'data' => false]
     ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
         return $this->syncTask(
             $sourceUser,
             $sourceHost,
@@ -313,7 +329,8 @@ class RoboFileBase extends AbstractRoboFile
             $destinationHost,
             $destinationKeyFile,
             $sourceApp,
-            $destinationApp
+            $destinationApp,
+            $opts
         );
     }
 
@@ -331,11 +348,19 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @option app The name of the app we're creating the backup for.
      */
-    public function digipolisBackupDrupal8($host, $user, $keyFile, $opts = ['app' => 'default'])
+    public function digipolisBackupDrupal8(
+        $host,
+        $user,
+        $keyFile,
+        $opts = ['app' => 'default', 'files' => false, 'data' => false])
     {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app']);
         $auth = new KeyFile($user, $keyFile);
-        return $this->backupTask($host, $auth, $remote);
+        return $this->backupTask($host, $auth, $remote, $opts);
     }
 
     /**
@@ -363,11 +388,17 @@ class RoboFileBase extends AbstractRoboFile
         $opts = [
             'app' => 'default',
             'timestamp' => null,
+            'files' => false,
+            'data' => false,
         ]
     ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
-        return $this->restoreBackupTask($host, $auth, $remote);
+        return $this->restoreBackupTask($host, $auth, $remote, $opts);
     }
 
     /**
@@ -395,11 +426,17 @@ class RoboFileBase extends AbstractRoboFile
         $opts = [
             'app' => 'default',
             'timestamp' => null,
+            'files' => false,
+            'data' => false,
         ]
     ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
-        return $this->downloadBackupTask($host, $auth, $remote);
+        return $this->downloadBackupTask($host, $auth, $remote, $opts);
     }
 
     /**
@@ -427,11 +464,17 @@ class RoboFileBase extends AbstractRoboFile
         $opts = [
             'app' => 'default',
             'timestamp' => null,
+            'files' => false,
+            'data' => false,
         ]
     ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
-        return $this->uploadBackupTask($host, $auth, $remote);
+        return $this->uploadBackupTask($host, $auth, $remote, $opts);
     }
 
     protected function defaultDbConfig()
@@ -444,8 +487,8 @@ class RoboFileBase extends AbstractRoboFile
         $finder = new \Symfony\Component\Finder\Finder();
         $finder->in($webDir . '/sites')->files()->name('settings.php');
         foreach ($finder as $settingsFile) {
-            $site_path = null;
-            $app_root = null;
+            $app_root = $webDir;
+            $site_path = 'sites/default';
             include_once $settingsFile->getRealpath();
             break;
         }
