@@ -40,21 +40,20 @@ class RoboFileBase extends AbstractRoboFile
             $opts['files'] = true;
             $opts['data'] = true;
         }
-        if (!$opts['data']) {
-            return false;
-        }
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $collection = $this->collectionBuilder();
-        $parent = parent::preRestoreBackupTask($worker, $auth, $remote);
+        $parent = parent::preRestoreBackupTask($worker, $auth, $remote, $opts);
         if ($parent) {
             $collection->addTask($parent);
         }
 
-        $collection
-            ->taskSsh($worker, $auth)
-                ->remoteDirectory($currentProjectRoot, true)
-                ->timeout(60)
-                ->exec('vendor/bin/drupal database:drop -y');
+        if ($opts['data']) {
+            $collection
+                ->taskSsh($worker, $auth)
+                    ->remoteDirectory($currentProjectRoot, true)
+                    ->timeout(60)
+                    ->exec('vendor/bin/drupal database:drop -y');
+        }
         return $collection;
     }
 
