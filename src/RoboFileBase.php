@@ -352,8 +352,8 @@ class RoboFileBase extends AbstractRoboFile
         $host,
         $user,
         $keyFile,
-        $opts = ['app' => 'default', 'files' => false, 'data' => false])
-    {
+        $opts = ['app' => 'default', 'files' => false, 'data' => false]
+    ) {
         if (!$opts['files'] && !$opts['data']) {
             $opts['files'] = true;
             $opts['data'] = true;
