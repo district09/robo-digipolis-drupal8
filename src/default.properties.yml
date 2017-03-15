@@ -13,3 +13,5 @@ remote:
   opcache:
     env: 'fcgi'
     host: '/var/run/php_fpm_[user].sock'
+local:
+  filesdir: '[web_root]/sites/default/files'
