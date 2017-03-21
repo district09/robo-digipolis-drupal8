@@ -40,7 +40,7 @@ class RoboFileBase extends AbstractRoboFile
             $opts['files'] = true;
             $opts['data'] = true;
         }
-        $currentProjectRoot = $remote['currentdir'] . '/..';
+        $currentWebRoot = $remote['currentdir'];
         $collection = $this->collectionBuilder();
         $parent = parent::preRestoreBackupTask($worker, $auth, $remote, $opts);
         if ($parent) {
@@ -50,9 +50,14 @@ class RoboFileBase extends AbstractRoboFile
         if ($opts['data']) {
             $collection
                 ->taskSsh($worker, $auth)
-                    ->remoteDirectory($currentProjectRoot, true)
+                    ->remoteDirectory($currentWebRoot, true)
                     ->timeout(60)
-                    ->exec('vendor/bin/drupal database:drop -y');
+                    // Drupal console needs to bootstrap Drupal to load its
+                    // commands. If something goes wrong during bootstrap we
+                    // can't drop the db. So we use drush for now.
+                    // ->exec('vendor/bin/drupal database:drop -y');
+                    ->exec('../vendor/bin/drush sql-drop -y');
+
         }
         return $collection;
     }
