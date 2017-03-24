@@ -216,21 +216,30 @@ class RoboFileBase extends AbstractRoboFile
         $collection = $this->collectionBuilder();
         $collection
             ->taskDrupalConsoleStack('vendor/bin/drupal')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance()
-              ->updateDb();
-        if ($opts['config-import']) {
-            $collection->configImport();
-        }
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->maintenance();
+
+        // When uninstalling modules inside update hook,
+        // we get "dependency on a non-existent service" exception.
+        // Therefore switch to drush for excecuting update hooks.
         $collection
             ->taskExecStack()
-                // Todo: find a way to do this with drupal console.
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
+            ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush updb --yes');
+
+        if ($opts['config-import']) {
+            $collection
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush cim --yes');
+        }
+
+        $collection
+            ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
+            ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance(false);
-        return $collection;
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->cacheRebuild()
+            ->maintenance(FALSE);
+
+    return $collection;
     }
 
     /**
