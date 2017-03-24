@@ -216,12 +216,21 @@ class RoboFileBase extends AbstractRoboFile
         $collection = $this->collectionBuilder();
         $collection
             ->taskDrupalConsoleStack('vendor/bin/drupal')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance()
-              ->updateDb();
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->maintenance();
+
+        // When uninstalling modules inside update hook,
+        // we get "dependency on a non-existent service" exception.
+        // Therefore switch to drush for excecuting update hooks.
+        $collection
+            ->taskExecStack()
+            ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush updb --yes');
+
         if ($opts['config-import']) {
-            $collection->configImport();
+            $collection
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush cim --yes');
         }
+
         $collection
             ->taskExecStack()
                 // Todo: find a way to do this with drupal console.
@@ -229,8 +238,10 @@ class RoboFileBase extends AbstractRoboFile
                 ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
                 ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance(false);
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->cacheRebuild()
+            ->maintenance(false);
+
         return $collection;
     }
 
