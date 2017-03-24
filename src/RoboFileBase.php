@@ -232,8 +232,11 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection
-            ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
-            ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
+            ->taskExecStack()
+                // Todo: find a way to do this with drupal console.
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush cr')
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->cacheRebuild()
@@ -488,6 +491,32 @@ class RoboFileBase extends AbstractRoboFile
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
         return $this->uploadBackupTask($host, $auth, $remote, $opts);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function digipolisSyncLocal(
+        $host,
+        $user,
+        $keyFile,
+        $opts = [
+            'app' => 'default',
+            'files' => false,
+            'data' => false,
+        ]
+    ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
+        $local = $this->getLocalSettings($opts['app']);
+        $collection = parent::digipolisSyncLocal($host, $user, $keyFile, $opts);
+        $collection->taskExecStack()
+            ->exec('rm -rf ' . $local['filesdir'] . '/files')
+            ->exec('mv ' . $local['filesdir'] . '/public ' . $local['filesdir'] . '/files')
+            ->exec('mv ' . $local['filesdir'] . '/private ' . $local['filesdir'] . '/files/private');
+        return $collection;
     }
 
     protected function defaultDbConfig()
