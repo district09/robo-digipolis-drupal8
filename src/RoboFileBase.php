@@ -225,6 +225,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->taskExecStack()
                 // Todo: find a way to do this with drupal console.
+                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush cr')
                 ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
                 ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
