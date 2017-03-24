@@ -237,9 +237,9 @@ class RoboFileBase extends AbstractRoboFile
             ->taskDrupalConsoleStack('vendor/bin/drupal')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->cacheRebuild()
-            ->maintenance(FALSE);
+            ->maintenance(false);
 
-    return $collection;
+        return $collection;
     }
 
     /**
