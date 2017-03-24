@@ -481,6 +481,32 @@ class RoboFileBase extends AbstractRoboFile
         return $this->uploadBackupTask($host, $auth, $remote, $opts);
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function digipolisSyncLocal(
+        $host,
+        $user,
+        $keyFile,
+        $opts = [
+            'app' => 'default',
+            'files' => false,
+            'data' => false,
+        ]
+    ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
+        $local = $this->getLocalSettings($opts['app']);
+        $collection = parent::digipolisSyncLocal($host, $user, $keyFile, $opts);
+        $collection->taskExecStack()
+            ->exec('rm -rf ' . $local['filesdir'] . '/files')
+            ->exec('mv ' . $local['filesdir'] . '/public ' . $local['filesdir'] . '/files')
+            ->exec('mv ' . $local['filesdir'] . '/private ' . $local['filesdir'] . '/files/private');
+        return $collection;
+    }
+
     protected function defaultDbConfig()
     {
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
