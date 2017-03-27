@@ -10,6 +10,7 @@ use SecurityLib\Strength;
 
 class RoboFileBase extends AbstractRoboFile
 {
+    use \Boedah\Robo\Task\Drush\loadTasks;
     use \DigipolisGent\Robo\Task\DrupalConsole\loadTasks;
     use \DigipolisGent\Robo\Task\Package\Drupal8\loadTasks;
 
@@ -222,21 +223,19 @@ class RoboFileBase extends AbstractRoboFile
         // When uninstalling modules inside update hook,
         // we get "dependency on a non-existent service" exception.
         // Therefore switch to drush for excecuting update hooks.
-        $collection
-            ->taskExecStack()
-            ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush updb --yes');
+        $collection->taskDrushStack('vendor/bin/drush')
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->updateDb();
 
         if ($opts['config-import']) {
             $collection
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush cim --yes');
+                ->drush('cim');
         }
 
         $collection
-            ->taskExecStack()
-                // Todo: find a way to do this with drupal console.
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush cr')
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
+            ->drush('cr')
+            ->drush('locale-check')
+            ->drush('locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->cacheRebuild()
@@ -290,10 +289,11 @@ class RoboFileBase extends AbstractRoboFile
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance()
-            ->taskExecStack()
-                // Todo: find a way to do this with drupal console.
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
+            ->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+                ->drush('cr')
+                ->drush('locale-check')
+                ->drush('locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance(false);
