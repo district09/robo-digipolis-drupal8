@@ -10,6 +10,7 @@ use SecurityLib\Strength;
 
 class RoboFileBase extends AbstractRoboFile
 {
+    use \Boedah\Robo\Task\Drush\loadTasks;
     use \DigipolisGent\Robo\Task\DrupalConsole\loadTasks;
     use \DigipolisGent\Robo\Task\Package\Drupal8\loadTasks;
 
@@ -216,20 +217,45 @@ class RoboFileBase extends AbstractRoboFile
         $collection = $this->collectionBuilder();
         $collection
             ->taskDrupalConsoleStack('vendor/bin/drupal')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance()
-              ->updateDb();
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->maintenance();
+
+        // When uninstalling modules inside update hook,
+        // we get "dependency on a non-existent service" exception.
+        // Therefore switch to drush for excecuting update hooks.
+        $collection->taskDrushStack('vendor/bin/drush')
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->updateDb();
+
         if ($opts['config-import']) {
-            $collection->configImport();
+            $collection
+                ->drush('cim');
         }
+
         $collection
-            ->taskExecStack()
-                // Todo: find a way to do this with drupal console.
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
+            ->drush('cr');
+
+        $locale = $this->taskExecStack()
+            ->dir($this->getConfig()->get('digipolis.root.project'))
+            ->exec(
+                'vendor/bin/drush '
+                . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+                . 'pml --core --fields=name --status=enabled --type=module --format=list '
+                . '| grep "(locale)"'
+            )->run()->wasSuccessful();
+
+        if ($locale) {
+            $collection
+                ->drush('locale-check')
+                ->drush('locale-update');
+        }
+
+        $collection
             ->taskDrupalConsoleStack('vendor/bin/drupal')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance(false);
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->cacheRebuild()
+            ->maintenance(false);
+
         return $collection;
     }
 
@@ -278,10 +304,11 @@ class RoboFileBase extends AbstractRoboFile
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance()
-            ->taskExecStack()
-                // Todo: find a way to do this with drupal console.
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-check')
-                ->exec('cd ' . $this->getConfig()->get('digipolis.root.web') . ' && ../vendor/bin/drush locale-update')
+            ->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+                ->drush('cr')
+                ->drush('locale-check')
+                ->drush('locale-update')
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance(false);
@@ -481,6 +508,32 @@ class RoboFileBase extends AbstractRoboFile
         return $this->uploadBackupTask($host, $auth, $remote, $opts);
     }
 
+    /**
+     * {@inheritdoc}
+     */
+    public function digipolisSyncLocal(
+        $host,
+        $user,
+        $keyFile,
+        $opts = [
+            'app' => 'default',
+            'files' => false,
+            'data' => false,
+        ]
+    ) {
+        if (!$opts['files'] && !$opts['data']) {
+            $opts['files'] = true;
+            $opts['data'] = true;
+        }
+        $local = $this->getLocalSettings($opts['app']);
+        $collection = parent::digipolisSyncLocal($host, $user, $keyFile, $opts);
+        $collection->taskExecStack()
+            ->exec('rm -rf ' . $local['filesdir'] . '/files')
+            ->exec('mv ' . $local['filesdir'] . '/public ' . $local['filesdir'] . '/files')
+            ->exec('mv ' . $local['filesdir'] . '/private ' . $local['filesdir'] . '/files/private');
+        return $collection;
+    }
+
     protected function defaultDbConfig()
     {
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
@@ -514,7 +567,11 @@ class RoboFileBase extends AbstractRoboFile
                     'cache_*',
                     '*_cache',
                     '*_cache_*',
+                    'config',
+                    'config_snapshot',
                     'flood',
+                    'key_value',
+                    'key_value_expire',
                     'search_dataset',
                     'search_index',
                     'search_total',
