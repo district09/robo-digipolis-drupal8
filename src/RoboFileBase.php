@@ -71,7 +71,7 @@ class RoboFileBase extends AbstractRoboFile
               . escapeshellarg($extra['profile'])
               . ' --site-name=' . escapeshellarg($extra['site-name'])
               . ($force ? ' --force' : '' )
-              . $extra['config-import'] ? ' --config-import' : '';
+              . ($extra['config-import'] ? ' --config-import' : '');
 
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentProjectRoot, true)
@@ -363,7 +363,8 @@ class RoboFileBase extends AbstractRoboFile
         if (!isset($config_directories['sync'])) {
             return false;
         }
-        $siteSettings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($config_directories['sync'] . '/system.site.yml'));
+        $sync = $this->getConfig()->get('digipolis.root.project') . '/' . $config_directories['sync'] . '/system.site.yml';
+        $siteSettings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($sync));
         return $siteSettings['uuid'];
     }
 
