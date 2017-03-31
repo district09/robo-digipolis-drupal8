@@ -233,9 +233,24 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection
-            ->drush('cr')
-            ->drush('locale-check')
-            ->drush('locale-update')
+            ->drush('cr');
+
+        $locale = $this->taskExecStack()
+            ->dir($this->getConfig()->get('digipolis.root.project'))
+            ->exec(
+                'vendor/bin/drush '
+                . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+                . 'pml --core --fields=name --status=enabled --type=module --format=list '
+                . '| grep "(locale)"'
+            )->run()->wasSuccessful();
+
+        if ($locale) {
+            $collection
+                ->drush('locale-check')
+                ->drush('locale-update');
+        }
+
+        $collection
             ->taskDrupalConsoleStack('vendor/bin/drupal')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->cacheRebuild()
