@@ -65,11 +65,13 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function installTask($worker, AbstractAuth $auth, $remote, $extra = [], $force = false)
     {
+        $extra += ['config-import' => false];
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $install = 'vendor/bin/robo digipolis:install-drupal8 '
               . escapeshellarg($extra['profile'])
               . ' --site-name=' . escapeshellarg($extra['site-name'])
-              . ($force ? ' --force' : '' );
+              . ($force ? ' --force' : '' )
+              . $extra['config-import'] ? ' --config-import' : '';
 
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentProjectRoot, true)
@@ -228,6 +230,10 @@ class RoboFileBase extends AbstractRoboFile
             ->updateDb();
 
         if ($opts['config-import']) {
+            $uuid = $this->getSiteUuid();
+            if ($uuid) {
+                $collection->drush('cset system.site uuid ' . $uuid);
+            }
             $collection
                 ->drush('cim');
         }
@@ -271,7 +277,7 @@ class RoboFileBase extends AbstractRoboFile
      * @option force Force the installation. This will drop all tables in the
      *   current database.
      */
-    public function digipolisInstallDrupal8($profile = 'standard', $opts = ['site-name' => 'Drupal', 'force' => false])
+    public function digipolisInstallDrupal8($profile = 'standard', $opts = ['site-name' => 'Drupal', 'force' => false, 'config-import' => false])
     {
         $this->readProperties();
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
@@ -323,11 +329,42 @@ class RoboFileBase extends AbstractRoboFile
                 ->drush('locale-update');
         }
 
+        if ($opts['config-import']) {
+            $uuid = $this->getSiteUuid();
+            if ($uuid) {
+                $collection->drush('cset system.site uuid ' . $uuid);
+            }
+            $collection
+                ->drush('cim');
+        }
+
         $collection
             ->taskDrupalConsoleStack('vendor/bin/drupal')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
               ->maintenance(false);
         return $collection;
+    }
+
+    protected function getSiteUuid()
+    {
+        $webDir = $this->getConfig()->get('digipolis.root.web', false);
+        if (!$webDir) {
+            return false;
+        }
+
+        $finder = new \Symfony\Component\Finder\Finder();
+        $finder->in($webDir . '/sites')->files()->name('settings.php');
+        foreach ($finder as $settingsFile) {
+            $app_root = $webDir;
+            $site_path = 'sites/default';
+            include_once $settingsFile->getRealpath();
+            break;
+        }
+        if (!isset($config_directories['sync'])) {
+            return false;
+        }
+        $siteSettings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($config_directories['sync'] . '/system.site.yml'));
+        return $siteSettings['uuid'];
     }
 
     /**
