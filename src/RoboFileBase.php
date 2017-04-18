@@ -368,7 +368,7 @@ class RoboFileBase extends AbstractRoboFile
             $this->say('Could not get site UUID. No sync directory set.');
             return false;
         }
-        $sync = $this->getConfig()->get('digipolis.root.project') . '/' . $config_directories['sync'] . '/system.site.yml';
+        $sync = $this->getConfig()->get('digipolis.root.web') . '/' . $config_directories['sync'] . '/system.site.yml';
         $this->say('Parsing site UUID from ' . $sync . '.');
         $siteSettings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($sync));
         return $siteSettings['uuid'];
