@@ -349,6 +349,7 @@ class RoboFileBase extends AbstractRoboFile
     {
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
         if (!$webDir) {
+            $this->say('Could not get site UUID. No webroot found.');
             return false;
         }
 
@@ -361,9 +362,11 @@ class RoboFileBase extends AbstractRoboFile
             break;
         }
         if (!isset($config_directories['sync'])) {
+            $this->say('Could not get site UUID. No sync directory set.');
             return false;
         }
         $sync = $this->getConfig()->get('digipolis.root.project') . '/' . $config_directories['sync'] . '/system.site.yml';
+        $this->say('Parsing site UUID from ' . $sync . '.');
         $siteSettings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($sync));
         return $siteSettings['uuid'];
     }
