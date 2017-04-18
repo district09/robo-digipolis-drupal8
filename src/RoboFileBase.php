@@ -283,7 +283,7 @@ class RoboFileBase extends AbstractRoboFile
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
         $app_root = $webDir;
         $site_path = 'sites/default';
-        include_once $webDir . '/sites/default/settings.php';
+        include $webDir . '/sites/default/settings.php';
         $config = $databases['default']['default'];
         $passGenerator = (new Factory())
             ->getGenerator(new Strength(Strength::MEDIUM));
@@ -605,7 +605,7 @@ class RoboFileBase extends AbstractRoboFile
         foreach ($finder as $settingsFile) {
             $app_root = $webDir;
             $site_path = 'sites/default';
-            include_once $settingsFile->getRealpath();
+            include $settingsFile->getRealpath();
             break;
         }
         if (!isset($databases['default']['default'])) {
