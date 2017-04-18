@@ -354,10 +354,12 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $finder = new \Symfony\Component\Finder\Finder();
+        $this->say('Searching for settings.php in ' . $webDir . '/sites and subdirectories.');
         $finder->in($webDir . '/sites')->files()->name('settings.php');
         foreach ($finder as $settingsFile) {
             $app_root = $webDir;
             $site_path = 'sites/default';
+            $this->say('Loading settings from ' . $settingsFile->getRealpath() . '.');
             include_once $settingsFile->getRealpath();
             break;
         }
