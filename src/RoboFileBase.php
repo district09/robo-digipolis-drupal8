@@ -641,8 +641,6 @@ class RoboFileBase extends AbstractRoboFile
                     '*_cache',
                     '*_cache_*',
                     'flood',
-                    'key_value',
-                    'key_value_expire',
                     'search_dataset',
                     'search_index',
                     'search_total',
