@@ -488,7 +488,21 @@ class RoboFileBase extends AbstractRoboFile
         }
         $remote = $this->getRemoteSettings($host, $user, $keyFile, $opts['app'], $opts['timestamp']);
         $auth = new KeyFile($user, $keyFile);
-        return $this->restoreBackupTask($host, $auth, $remote, $opts);
+        $collection = $this->collectionBuilder();
+        $collection->addTask($this->restoreBackupTask($host, $auth, $remote, $opts));
+        $collection->taskDrushStack('vendor/bin/drush')
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+
+        $uuid = $this->getSiteUuid();
+        if ($uuid) {
+            $collection->drush('cset system.site uuid ' . $uuid);
+        }
+        $collection
+            ->drush('cim');
+
+        $collection
+            ->drush('cr');
+        return $collection;
     }
 
     /**
@@ -626,11 +640,7 @@ class RoboFileBase extends AbstractRoboFile
                     'cache_*',
                     '*_cache',
                     '*_cache_*',
-                    'config',
-                    'config_snapshot',
                     'flood',
-                    'key_value',
-                    'key_value_expire',
                     'search_dataset',
                     'search_index',
                     'search_total',
