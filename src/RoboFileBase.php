@@ -27,6 +27,7 @@ class RoboFileBase extends AbstractRoboFile
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentProjectRoot, true)
             ->exec('vendor/bin/drupal site:status')
+            ->timeout(300)
             ->run()
             ->wasSuccessful();
     }
