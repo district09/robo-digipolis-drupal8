@@ -13,6 +13,7 @@ class RoboFileBase extends AbstractRoboFile
     use \Boedah\Robo\Task\Drush\loadTasks;
     use \DigipolisGent\Robo\Task\DrupalConsole\loadTasks;
     use \DigipolisGent\Robo\Task\Package\Drupal8\loadTasks;
+    use \DigipolisGent\Robo\Task\CodeValidation\loadTasks;
 
     /**
      * File backup subdirs.
@@ -30,6 +31,74 @@ class RoboFileBase extends AbstractRoboFile
             ->timeout(300)
             ->run()
             ->wasSuccessful();
+    }
+
+    public function digipolisValidateCode()
+    {
+        $local = $this->getLocalSettings();
+        $phpmdExtensions = [
+            'php',
+            'module',
+            'install',
+            'profile',
+            'theme',
+        ];
+        $phpcsExtensions = [
+            'php',
+            'module',
+            'install',
+            'profile',
+            'theme',
+            'js',
+            'yml',
+        ];
+        // Directories and files to check.
+        $directories = [
+          $local['project_root'] . '/web/modules/custom',
+          $local['project_root'] . '/web/profiles/custom',
+          $local['project_root'] . '/web/themes/custom',
+        ];
+
+        // Check if directories exist.
+        $checks = [];
+        foreach ($directories as $dir) {
+          if (!file_exists($dir)) {
+            continue;
+          }
+
+          $checks[] = $dir;
+        }
+        if (!$checks) {
+          $this->say('! No custom directories to run checks on.');
+          return;
+        }
+        $phpcs = $this
+            ->taskPhpCs(
+                implode(' ', $checks),
+                $local['project_root'] . '/vendor/drupal/coder/coder_sniffer/Drupal',
+                $phpcsExtensions
+            )
+            ->ignore([
+                'libraries',
+                'node_modules',
+                'Gruntfile.js',
+                '*.md',
+                '*.min.js',
+                '*.css'
+            ])
+            ->reportType('full');
+        $phpmd = $this->taskPhpMd(
+            implode(',', $checks),
+            'text',
+            $phpmdExtensions
+        );
+        $collection = $this->collectionBuilder();
+        // Add the PHPCS task to the rollback as well so we always have the full
+        // report.
+        $collection->rollback($phpcs);
+        $collection->addTask($phpmd);
+        $collection->addTask($phpcs);
+        return $collection;
     }
 
     protected function preRestoreBackupTask(
