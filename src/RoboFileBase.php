@@ -13,6 +13,7 @@ class RoboFileBase extends AbstractRoboFile
     use \Boedah\Robo\Task\Drush\loadTasks;
     use \DigipolisGent\Robo\Task\DrupalConsole\loadTasks;
     use \DigipolisGent\Robo\Task\Package\Drupal8\loadTasks;
+    use \DigipolisGent\Robo\Task\CodeValidation\loadTasks;
 
     /**
      * File backup subdirs.
@@ -30,6 +31,51 @@ class RoboFileBase extends AbstractRoboFile
             ->timeout(300)
             ->run()
             ->wasSuccessful();
+    }
+
+    public function digipolisValidateCode()
+    {
+        $local = $this->getLocalSettings();
+        $phpmdExtensions = [
+            'php',
+            'module',
+            'install',
+            'profile',
+            'theme',
+        ];
+        $phpcsExtensions = [
+            'php',
+            'module',
+            'install',
+            'profile',
+            'theme',
+            'js',
+            'yml',
+        ];
+        // Directories and files to check.
+        $directories = [
+          $local['project_root'] . '/web/modules/custom',
+          $local['project_root'] . '/web/profiles/custom',
+          $local['project_root'] . '/web/themes/custom',
+        ];
+
+        // Check if directories exist.
+        $checks = [];
+        foreach ($directories as $dir) {
+          if (!file_exists($dir)) {
+            continue;
+          }
+
+          $checks[] = $dir;
+        }
+        if (!$checks) {
+          $this->say('! No custom directories to run checks on.');
+          return;
+        }
+        $collection = $this->collectionBuilder();
+        $collection->taskPhpMd(implode(',', $checks), 'text', $phpmdExtensions);
+        $collection->taskPhpCs(implode(',', $checks), $local['project_root'] . '/vendor/drupal/coder/code_sniffer', $phpcsExtensions);
+        return $collection;
     }
 
     protected function preRestoreBackupTask(

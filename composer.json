@@ -9,7 +9,9 @@
         "digipolisgent/robo-digipolis-package-drupal8": "^0.1",
         "ircmaxell/random-lib": "^1.2",
         "digipolisgent/robo-digipolis-helpers": "^0.1",
-        "boedah/robo-drush": "^3.0"
+        "boedah/robo-drush": "^3.0",
+        "digipolisgent/robo-digipolis-code-validation": "^0.1.0",
+        "drupal/coder": "^8.2"
     },
     "require-dev": {
         "phpunit/phpunit": "~4.4",
