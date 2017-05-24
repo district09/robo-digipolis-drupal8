@@ -72,9 +72,32 @@ class RoboFileBase extends AbstractRoboFile
           $this->say('! No custom directories to run checks on.');
           return;
         }
+        $phpcs = $this
+            ->taskPhpCs(
+                implode(' ', $checks),
+                $local['project_root'] . '/vendor/drupal/coder/coder_sniffer/Drupal',
+                $phpcsExtensions
+            )
+            ->ignore([
+                'libraries',
+                'node_modules',
+                'Gruntfile.js',
+                '*.md',
+                '*.min.js',
+                '*.css'
+            ])
+            ->reportType('full');
+        $phpmd = $this->taskPhpMd(
+            implode(',', $checks),
+            'text',
+            $phpmdExtensions
+        );
         $collection = $this->collectionBuilder();
-        $collection->taskPhpMd(implode(',', $checks), 'text', $phpmdExtensions);
-        $collection->taskPhpCs(implode(',', $checks), $local['project_root'] . '/vendor/drupal/coder/code_sniffer', $phpcsExtensions);
+        // Add the PHPCS task to the rollback as well so we always have the full
+        // report.
+        $collection->rollback($phpcs);
+        $collection->addTask($phpmd);
+        $collection->addTask($phpcs);
         return $collection;
     }
 
