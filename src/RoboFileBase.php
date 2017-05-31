@@ -24,13 +24,13 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function isSiteInstalled($worker, AbstractAuth $auth, $remote)
     {
-        $currentProjectRoot = $remote['currentdir'] . '/..';
-        return $this->taskSsh($worker, $auth)
-            ->remoteDirectory($currentProjectRoot, true)
-            ->exec('vendor/bin/drupal site:status')
+        $currentWebRoot = $remote['currentdir'];
+        $result = $this->taskSsh($worker, $auth)
+            ->remoteDirectory($currentWebRoot, true)
+            ->exec('../vendor/bin/drush sql-query "SHOW TABLES"')
             ->timeout(300)
-            ->run()
-            ->wasSuccessful();
+            ->run();
+        return $result->wasSuccessful() && count(explode("\n", $result->getMessage())) > 1;
     }
 
     public function digipolisValidateCode()
@@ -168,11 +168,11 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function clearCacheTask($worker, $auth, $remote)
     {
-        $currentProjectRoot = $remote['currentdir'] . '/..';
+        $currentWebRoot = $remote['currentdir'];
         return $this->taskSsh($worker, $auth)
-            ->remoteDirectory($currentProjectRoot, true)
+            ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
-            ->exec('vendor/bin/drupal cache:rebuild all --no-interaction');
+            ->exec('../vendor/bin/drush cr all');
     }
 
     protected function buildTask($archivename = null)
@@ -288,9 +288,9 @@ class RoboFileBase extends AbstractRoboFile
         $this->readProperties();
         $collection = $this->collectionBuilder();
         $collection
-            ->taskDrupalConsoleStack('vendor/bin/drupal')
+            ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->maintenance();
+            ->drush('sset system.maintenance_mode 1');
 
         // When uninstalling modules inside update hook,
         // we get "dependency on a non-existent service" exception.
@@ -327,10 +327,10 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection
-            ->taskDrupalConsoleStack('vendor/bin/drupal')
+            ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->cacheRebuild()
-            ->maintenance(false);
+            ->drush('cr all')
+            ->drush('sset system.maintenance_mode 0');
 
         return $collection;
     }
@@ -359,27 +359,33 @@ class RoboFileBase extends AbstractRoboFile
             ->getGenerator(new Strength(Strength::MEDIUM));
         $collection = $this->collectionBuilder();
         $collection
-            ->taskDrupalConsoleStack('vendor/bin/drupal')
+            ->taskDrushStack('vendor/bin/drush')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->dbType($config['driver'])
-              ->dbHost($config['host'])
-              ->dbName($config['database'])
-              ->dbUser($config['username'])
-              ->dbPass($config['password'])
-              ->dbPort($config['port'])
+              ->dbUrl(
+                  $config['driver'] . '://'
+                  . $config['username'] . ':' . $config['password']
+                  . '@' . $config['host']
+                . (isset($config['port']) && !empty($config['port'])
+                      ? ':' . $config['port']
+                      : ''
+                  )
+                  . '/' . $config['database']
+              )
+              ->dbSu($config['username'])
+              ->dbSuPw($config['password'])
               ->dbPrefix($config['prefix'])
               ->siteName($opts['site-name'])
-              ->accountPass($passGenerator->generate(16))
-              ->option('no-interaction');
+              ->accountPass($passGenerator->generate(16));
         if ($opts['force']) {
-            $collection->option('force');
+            // There is no force option for drush.
+            // $collection->option('force');
         }
         $collection
             ->siteInstall($profile);
         $collection
-            ->taskDrupalConsoleStack('vendor/bin/drupal')
+            ->taskDrushStack('vendor/bin/drush')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance()
+              ->drush('sset system.maintenance_mode 1')
             ->taskDrushStack('vendor/bin/drush')
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
                 ->drush('cr');
@@ -409,9 +415,9 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection
-            ->taskDrupalConsoleStack('vendor/bin/drupal')
+            ->taskDrushStack('vendor/bin/drush')
               ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->maintenance(false);
+              ->drush('sset system.maintenance_mode 0');
         return $collection;
     }
 
