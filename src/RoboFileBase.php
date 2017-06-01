@@ -22,15 +22,28 @@ class RoboFileBase extends AbstractRoboFile
      */
     protected $fileBackupSubDirs = ['public', 'private'];
 
+    protected $siteInstalled = null;
+
+    public function setSiteInstalled($installed)
+    {
+        $this->siteInstalled = $installed;
+    }
+
     protected function isSiteInstalled($worker, AbstractAuth $auth, $remote)
     {
+        if (!is_null($this->siteInstalled)) {
+            return $this->siteInstalled;
+        }
         $currentWebRoot = $remote['currentdir'];
+        $self = $this;
         $result = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
-            ->exec('../vendor/bin/drush sql-query "SHOW TABLES"')
+            ->exec('../vendor/bin/drush sql-query "SHOW TABLES"', function ($output) use ($self) {
+                $self->setSiteInstalled(count(explode("\n", $output)) > 1);
+            })
             ->timeout(300)
             ->run();
-        return $result->wasSuccessful() && count(explode("\n", $result->getMessage())) > 1;
+        return $result->wasSuccessful() && $this->siteInstalled;
     }
 
     public function digipolisValidateCode()
