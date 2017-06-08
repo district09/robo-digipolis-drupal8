@@ -27,7 +27,7 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @var string[]
      */
-    protected $excludeFromBackup = ['public/php'];
+    protected $excludeFromBackup = ['php'];
 
     protected $siteInstalled = null;
 
