@@ -18,9 +18,16 @@ class RoboFileBase extends AbstractRoboFile
     /**
      * File backup subdirs.
      *
-     * @var type
+     * @var string[]
      */
     protected $fileBackupSubDirs = ['public', 'private'];
+
+    /**
+     * Files or directories to exclude from the backup.
+     *
+     * @var string[]
+     */
+    protected $excludeFromBackup = ['public/php'];
 
     protected $siteInstalled = null;
 
@@ -185,7 +192,8 @@ class RoboFileBase extends AbstractRoboFile
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
-            ->exec('../vendor/bin/drush cr all');
+            ->exec('../vendor/bin/drush cr all')
+            ->exec('../vendor/bin/drush cc drush');
     }
 
     protected function buildTask($archivename = null)
