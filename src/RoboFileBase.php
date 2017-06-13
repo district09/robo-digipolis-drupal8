@@ -106,12 +106,14 @@ class RoboFileBase extends AbstractRoboFile
                 '*.min.js',
                 '*.css'
             ])
-            ->reportType('full');
+            ->reportType('checkstyle')
+            ->reportFile('validation/phpcs.checkstyle.xml');
         $phpmd = $this->taskPhpMd(
             implode(',', $checks),
-            'text',
+            'xml',
             $phpmdExtensions
-        );
+        )
+        ->reportFile('validation/phpmd.xml');
         $collection = $this->collectionBuilder();
         // Add the PHPCS task to the rollback as well so we always have the full
         // report.
