@@ -168,6 +168,7 @@ class RoboFileBase extends AbstractRoboFile
             ->remoteDirectory($currentProjectRoot, true)
             // Install can take a long time. Let's set it to 15 minutes.
             ->timeout(900)
+            ->verbose($extra['verbose'])
             ->exec($install);
     }
 
@@ -183,6 +184,7 @@ class RoboFileBase extends AbstractRoboFile
                 ->remoteDirectory($currentProjectRoot, true)
                 // Updates can take a long time. Let's set it to 15 minutes.
                 ->timeout(900)
+                ->verbose($extra['verbose'])
                 ->exec($update);
         return $collection;
     }
@@ -240,6 +242,7 @@ class RoboFileBase extends AbstractRoboFile
             'force-install' => false,
             'config-import' => false,
             'worker' => null,
+            'verbose' => false,
         ]
     ) {
         return $this->deployTask($arguments, $opts);
