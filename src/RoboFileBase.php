@@ -50,7 +50,8 @@ class RoboFileBase extends AbstractRoboFile
             })
             ->timeout(300)
             ->run();
-        return $result->wasSuccessful() && $this->siteInstalled;
+        $this->setSiteInstalled($result->wasSuccessful() && $this->siteInstalled);
+        return $this->siteInstalled;
     }
 
     public function digipolisValidateCode()
