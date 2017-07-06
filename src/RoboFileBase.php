@@ -383,8 +383,7 @@ class RoboFileBase extends AbstractRoboFile
             'account-mail' => 'admin@example.com',
             'account-pass' => null
         ]
-    )
-    {
+    ) {
         $this->readProperties();
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
         $app_root = $webDir;
