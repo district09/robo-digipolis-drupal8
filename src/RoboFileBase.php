@@ -401,7 +401,7 @@ class RoboFileBase extends AbstractRoboFile
               ->dbSuPw($config['password'])
               ->dbPrefix($config['prefix'])
               ->siteName($opts['site-name'])
-              ->accountPass('"' . $passGenerator->generate(16) . '"');
+              ->accountPass('"' . $passGenerator->generateString(16) . '"');
         if ($opts['force']) {
             // There is no force option for drush.
             // $collection->option('force');
