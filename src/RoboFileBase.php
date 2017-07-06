@@ -373,7 +373,17 @@ class RoboFileBase extends AbstractRoboFile
      * @option force Force the installation. This will drop all tables in the
      *   current database.
      */
-    public function digipolisInstallDrupal8($profile = 'standard', $opts = ['site-name' => 'Drupal', 'force' => false, 'config-import' => false])
+    public function digipolisInstallDrupal8(
+        $profile = 'standard',
+        $opts = [
+            'site-name' => 'Drupal',
+            'force' => false,
+            'config-import' => false,
+            'account-name' => 'admin',
+            'account-mail' => 'admin@example.com',
+            'account-pass' => null
+        ]
+    )
     {
         $this->readProperties();
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
@@ -381,8 +391,15 @@ class RoboFileBase extends AbstractRoboFile
         $site_path = 'sites/default';
         include $webDir . '/sites/default/settings.php';
         $config = $databases['default']['default'];
-        $passGenerator = (new Factory())
-            ->getGenerator(new Strength(Strength::MEDIUM));
+
+        // Random string fallback for the account password.
+        if (empty($opts['account-pass'])) {
+            $factory = new Factory();
+            $opts['account-pass'] = $factory
+                ->getGenerator(new Strength(Strength::MEDIUM))
+                ->generateString(16);
+        }
+
         $collection = $this->collectionBuilder();
         $collection
             ->taskDrushStack('vendor/bin/drush')
@@ -401,7 +418,9 @@ class RoboFileBase extends AbstractRoboFile
               ->dbSuPw($config['password'])
               ->dbPrefix($config['prefix'])
               ->siteName($opts['site-name'])
-              ->accountPass('"' . $passGenerator->generateString(16) . '"');
+              ->accountName($opts['account-name'])
+              ->accountMail($opts['account-mail'])
+              ->accountPass('"' . $opts['account-pass'] . '"');
         if ($opts['force']) {
             // There is no force option for drush.
             // $collection->option('force');
