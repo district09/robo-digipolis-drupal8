@@ -5,6 +5,8 @@ namespace DigipolisGent\Robo\Drupal8;
 use DigipolisGent\Robo\Helpers\AbstractRoboFile;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\AbstractAuth;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
+use function file_exists;
+use function is_file;
 use RandomLib\Factory;
 use SecurityLib\Strength;
 
@@ -392,10 +394,16 @@ class RoboFileBase extends AbstractRoboFile
         ]
     ) {
         $this->readProperties();
-        $webDir = $this->getConfig()->get('digipolis.root.web', false);
-        $app_root = $webDir;
+        $app_root = $this->getConfig()->get('digipolis.root.web', false);
         $site_path = 'sites/default';
-        include $webDir . '/sites/default/settings.php';
+
+        if (is_file($app_root . '/sites/default/settings.php')) {
+            include $app_root . '/sites/default/settings.php';
+        }
+        elseif (is_file($app_root . '/sites/default/settings.local.php')) {
+            include $app_root . '/sites/default/settings.local.php';
+        }
+
         $config = $databases['default']['default'];
 
         // Random string fallback for the account password.
