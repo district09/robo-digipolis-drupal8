@@ -5,6 +5,8 @@ namespace DigipolisGent\Robo\Drupal8;
 use DigipolisGent\Robo\Helpers\AbstractRoboFile;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\AbstractAuth;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
+use function file_exists;
+use function is_file;
 use RandomLib\Factory;
 use SecurityLib\Strength;
 
@@ -202,6 +204,7 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function buildTask($archivename = null)
     {
+        $this->readProperties();
         $archive = is_null($archivename) ? $this->time . '.tar.gz' : $archivename;
         $collection = $this->collectionBuilder();
         $collection
@@ -332,6 +335,13 @@ class RoboFileBase extends AbstractRoboFile
             }
             $collection
                 ->drush('cim');
+
+            $collection->taskExecStack()
+                ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
+                ->exec('bash -c "[[ \'$ENABLED_MODULES\' =~ \((varnish|purge)\) && \'$ENABLED_MODULES\' =~ \(page_cache\) ]]" && exit 1 || :');
+
+            $collection->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
         }
 
         $collection
@@ -385,10 +395,16 @@ class RoboFileBase extends AbstractRoboFile
         ]
     ) {
         $this->readProperties();
-        $webDir = $this->getConfig()->get('digipolis.root.web', false);
-        $app_root = $webDir;
+        $app_root = $this->getConfig()->get('digipolis.root.web', false);
         $site_path = 'sites/default';
-        include $webDir . '/sites/default/settings.php';
+
+        if (is_file($app_root . '/sites/default/settings.php')) {
+            include $app_root . '/sites/default/settings.php';
+        }
+        elseif (is_file($app_root . '/sites/default/settings.local.php')) {
+            include $app_root . '/sites/default/settings.local.php';
+        }
+
         $config = $databases['default']['default'];
 
         // Random string fallback for the account password.
@@ -400,39 +416,33 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection = $this->collectionBuilder();
-        $collection
-            ->taskDrushStack('vendor/bin/drush')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->dbUrl(
-                  $config['driver'] . '://'
-                  . $config['username'] . ':' . $config['password']
-                  . '@' . $config['host']
+        $collection->taskDrushStack('vendor/bin/drush')
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->dbUrl(
+                $config['driver'] . '://'
+                . $config['username'] . ':' . $config['password']
+                . '@' . $config['host']
                 . (isset($config['port']) && !empty($config['port'])
-                      ? ':' . $config['port']
-                      : ''
-                  )
-                  . '/' . $config['database']
-              )
-              ->dbSu($config['username'])
-              ->dbSuPw($config['password'])
-              ->dbPrefix($config['prefix'])
-              ->siteName($opts['site-name'])
-              ->accountName($opts['account-name'])
-              ->accountMail($opts['account-mail'])
-              ->accountPass('"' . $opts['account-pass'] . '"');
+                    ? ':' . $config['port']
+                    : ''
+                )
+                . '/' . $config['database']
+            )
+            ->dbSu($config['username'])
+            ->dbSuPw($config['password'])
+            ->dbPrefix($config['prefix'])
+            ->siteName($opts['site-name'])
+            ->accountName($opts['account-name'])
+            ->accountMail($opts['account-mail'])
+            ->accountPass('"' . $opts['account-pass'] . '"');
         if ($opts['force']) {
             // There is no force option for drush.
             // $collection->option('force');
         }
         $collection
-            ->siteInstall($profile);
-        $collection
-            ->taskDrushStack('vendor/bin/drush')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->drush('sset system.maintenance_mode 1')
-            ->taskDrushStack('vendor/bin/drush')
-                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-                ->drush('cr');
+            ->siteInstall($profile)
+            ->drush('sset system.maintenance_mode 1')
+            ->drush('cr');
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
@@ -456,12 +466,18 @@ class RoboFileBase extends AbstractRoboFile
             }
             $collection
                 ->drush('cim');
+
+            $collection->taskExecStack()
+                ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
+                ->exec('bash -c "[[ \'$ENABLED_MODULES\' =~ \((varnish|purge)\) && \'$ENABLED_MODULES\' =~ \(page_cache\) ]]" && exit 1 || :');
+
+            $collection->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
         }
 
         $collection
-            ->taskDrushStack('vendor/bin/drush')
-              ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-              ->drush('sset system.maintenance_mode 0');
+            ->drush('sset system.maintenance_mode 0');
+
         return $collection;
     }
 
@@ -620,8 +636,14 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->drush('cim');
 
-        $collection
+        $collection->taskExecStack()
+            ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
+            ->exec('bash -c "[[ \'$ENABLED_MODULES\' =~ \((varnish|purge)\) && \'$ENABLED_MODULES\' =~ \(page_cache\) ]]" && exit 1 || :');
+
+        $collection->taskDrushStack('vendor/bin/drush')
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->drush('cr');
+
         return $collection;
     }
 
