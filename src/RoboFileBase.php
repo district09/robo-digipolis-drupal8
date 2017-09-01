@@ -202,6 +202,7 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function buildTask($archivename = null)
     {
+        $this->readProperties();
         $archive = is_null($archivename) ? $this->time . '.tar.gz' : $archivename;
         $collection = $this->collectionBuilder();
         $collection
