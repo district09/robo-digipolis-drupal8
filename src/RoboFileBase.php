@@ -334,8 +334,7 @@ class RoboFileBase extends AbstractRoboFile
                 $collection->drush('cset system.site uuid ' . $uuid);
             }
             $collection
-                ->drush('cr');
-            $collection
+                ->drush('cr')
                 ->drush('cim');
 
             $collection->taskExecStack()
