@@ -198,7 +198,7 @@ class RoboFileBase extends AbstractRoboFile
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
-            ->exec('../vendor/bin/drush cr all')
+            ->exec('../vendor/bin/drush cr')
             ->exec('../vendor/bin/drush cc drush');
     }
 
