@@ -334,11 +334,12 @@ class RoboFileBase extends AbstractRoboFile
                 $collection->drush('cset system.site uuid ' . $uuid);
             }
             $collection
+                ->drush('cr')
                 ->drush('cim');
 
             $collection->taskExecStack()
                 ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
-                ->exec('bash -c "[[ \'$ENABLED_MODULES\' =~ \((varnish|purge)\) && \'$ENABLED_MODULES\' =~ \(page_cache\) ]]" && exit 1 || :');
+                ->exec($this->varnishCheckCommand());
 
             $collection->taskDrushStack('vendor/bin/drush')
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
@@ -349,12 +350,9 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec(
-                'vendor/bin/drush '
-                . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
-                . 'pml --core --fields=name --status=enabled --type=module --format=list '
-                . '| grep "(locale)"'
-            )->run()->wasSuccessful();
+            ->exec($this->localeCheckCommand())
+            ->run()
+            ->wasSuccessful();
 
         if ($locale) {
             $collection
@@ -365,7 +363,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->drush('cr all')
+            ->drush('cr')
             ->drush('sset system.maintenance_mode 0');
 
         return $collection;
@@ -446,12 +444,9 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec(
-                'vendor/bin/drush '
-                . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
-                . 'pml --core --fields=name --status=enabled --type=module --format=list '
-                . '| grep "(locale)"'
-            )->run()->wasSuccessful();
+            ->exec($this->localeCheckCommand())
+            ->run()
+            ->wasSuccessful();
 
         if ($locale) {
             $collection
@@ -469,7 +464,7 @@ class RoboFileBase extends AbstractRoboFile
 
             $collection->taskExecStack()
                 ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
-                ->exec('bash -c "[[ \'$ENABLED_MODULES\' =~ \((varnish|purge)\) && \'$ENABLED_MODULES\' =~ \(page_cache\) ]]" && exit 1 || :');
+                ->exec($this->varnishCheckCommand());
 
             $collection->taskDrushStack('vendor/bin/drush')
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
@@ -508,6 +503,57 @@ class RoboFileBase extends AbstractRoboFile
         $this->say('Parsing site UUID from ' . $sync . '.');
         $siteSettings = \Symfony\Component\Yaml\Yaml::parse(file_get_contents($sync));
         return $siteSettings['uuid'];
+    }
+
+    /**
+     * Get the command to check if the page_cache module and varnish are not
+     * enabled simultaneously. Command differs for Drush 9 vs Drush 8.
+     *
+     * @return string
+     */
+    protected function varnishCheckCommand()
+    {
+        $this->readProperties();
+
+        $drushVersion = $this->taskDrushStack()
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->getVersion();
+        if (version_compare($drushVersion, '9.0', '<')) {
+            return 'bash -c "[[ '
+                . '\'$ENABLED_MODULES\' =~ \((varnish|purge)\) '
+                . '&& \'$ENABLED_MODULES\' =~ \(page_cache\)'
+                . ' ]]" && exit 1 || :';
+        }
+        return 'bash -c "[[ '
+            . '\'$ENABLED_MODULES\' =~ (varnish|purge) '
+            . '&& \'$ENABLED_MODULES\' =~ page_cache'
+            . ' ]]" && exit 1 || :';
+    }
+
+    /**
+     * Get the command to check if the locale module is enabled. Command differs
+     * for Drush 9 vs Drush 8.
+     *
+     * @return string
+     */
+    protected function localeCheckCommand()
+    {
+        $this->readProperties();
+
+        $drushVersion = $this->taskDrushStack()
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->getVersion();
+        if (version_compare($drushVersion, '9.0', '<')) {
+            return  'vendor/bin/drush '
+                . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+                . 'pml --core --fields=name --status=enabled --type=module --format=list '
+                . '| grep "(locale)"';
+        }
+
+        return 'vendor/bin/drush '
+            . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+            . 'pml --core --fields=name --status=enabled --type=module --format=list '
+            . '| grep "^locale$"';
     }
 
     /**
@@ -634,11 +680,12 @@ class RoboFileBase extends AbstractRoboFile
             $collection->drush('cset system.site uuid ' . $uuid);
         }
         $collection
+            ->drush('cr')
             ->drush('cim');
 
         $collection->taskExecStack()
             ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
-            ->exec('bash -c "[[ \'$ENABLED_MODULES\' =~ \((varnish|purge)\) && \'$ENABLED_MODULES\' =~ \(page_cache\) ]]" && exit 1 || :');
+            ->exec($this->varnishCheckCommand());
 
         $collection->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
