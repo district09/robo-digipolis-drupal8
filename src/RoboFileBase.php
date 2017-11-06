@@ -5,8 +5,6 @@ namespace DigipolisGent\Robo\Drupal8;
 use DigipolisGent\Robo\Helpers\AbstractRoboFile;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\AbstractAuth;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
-use function file_exists;
-use function is_file;
 use RandomLib\Factory;
 use SecurityLib\Strength;
 
