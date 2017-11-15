@@ -412,7 +412,7 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection = $this->collectionBuilder();
-        $collection->taskDrushStack('vendor/bin/drush')
+        $drushInstall = $collection->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbUrl(
                 $config['driver'] . '://'
@@ -426,11 +426,15 @@ class RoboFileBase extends AbstractRoboFile
             )
             ->dbSu($config['username'])
             ->dbSuPw($config['password'])
-            ->dbPrefix($config['prefix'])
             ->siteName($opts['site-name'])
             ->accountName($opts['account-name'])
             ->accountMail($opts['account-mail'])
             ->accountPass('"' . $opts['account-pass'] . '"');
+
+        if (!empty($config['prefix'])) {
+            $drushInstall->dbPrefix($config['prefix']);
+        }
+
         if ($opts['force']) {
             // There is no force option for drush.
             // $collection->option('force');
