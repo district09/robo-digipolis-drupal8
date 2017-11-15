@@ -4,7 +4,7 @@
          xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/4.1/phpunit.xsd"
 >
     <testsuites>
-        <testsuite name="robo-digipolis-deploy tests">
+        <testsuite name="robo-digipolis-drupal8 tests">
             <directory>./tests</directory>
         </testsuite>
     </testsuites>

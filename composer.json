@@ -14,8 +14,7 @@
         "drupal/coder": "^8.2"
     },
     "require-dev": {
-        "phpunit/phpunit": "~4.4",
-        "codeclimate/php-test-reporter": "dev-master"
+        "phpunit/phpunit": "~4.4"
     },
     "autoload": {
         "psr-4": {

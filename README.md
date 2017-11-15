@@ -1,5 +1,15 @@
 # Robo Digipolis Drupal8
 
+[![Latest Stable Version](https://poser.pugx.org/digipolisgent/robo-digipolis-drupal8/v/stable)](https://packagist.org/packages/digipolisgent/robo-digipolis-drupal8)
+[![Latest Unstable Version](https://poser.pugx.org/digipolisgent/robo-digipolis-drupal8/v/unstable)](https://packagist.org/packages/digipolisgent/robo-digipolis-drupal8)
+[![Total Downloads](https://poser.pugx.org/digipolisgent/robo-digipolis-drupal8/downloads)](https://packagist.org/packages/digipolisgent/robo-digipolis-drupal8)
+[![License](https://poser.pugx.org/digipolisgent/robo-digipolis-drupal8/license)](https://packagist.org/packages/digipolisgent/robo-digipolis-drupal8)
+
+[![Build Status](https://travis-ci.org/digipolisgent/robo-digipolis-drupal8.svg?branch=develop)](https://travis-ci.org/digipolisgent/robo-digipolis-drupal8)
+[![Maintainability](https://api.codeclimate.com/v1/badges/f3b213f3d449af134290/maintainability)](https://codeclimate.com/github/digipolisgent/robo-digipolis-drupal8/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/f3b213f3d449af134290/test_coverage)](https://codeclimate.com/github/digipolisgent/robo-digipolis-drupal8/test_coverage)
+[![PHP 7 ready](https://php7ready.timesplinter.ch/digipolisgent/robo-digipolis-drupal8/develop/badge.svg)](https://travis-ci.org/digipolisgent/robo-digipolis-drupal8)
+
 Used by digipolis, serving as an example.
 
 This package contains a RoboFileBase class that can be used in your own
