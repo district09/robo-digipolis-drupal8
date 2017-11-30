@@ -46,7 +46,8 @@ class RoboFileBase extends AbstractRoboFile
         $result = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->exec('../vendor/bin/drush sql-query "SHOW TABLES"', function ($output) use ($self) {
-                $self->setSiteInstalled(count(explode("\n", $output)) > 1);
+                $tables = array_filter(explode("\n", $output));
+                $self->setSiteInstalled(count($tables) > 10);
             })
             ->timeout(300)
             ->run();
