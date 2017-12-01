@@ -42,16 +42,15 @@ class RoboFileBase extends AbstractRoboFile
             return $this->siteInstalled;
         }
         $currentWebRoot = $remote['currentdir'];
-        $self = $this;
+        $tables = array();
         $result = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
-            ->exec('../vendor/bin/drush sql-query "SHOW TABLES"', function ($output) use ($self) {
-                $tables = array_filter(explode("\n", $output));
-                $self->setSiteInstalled(count($tables) > 10);
+            ->exec('../vendor/bin/drush sql-query "SHOW TABLES"', function ($output) use (&$tables) {
+                $tables = array_merge($tables, array_filter(explode("\n", $output)));
             })
             ->timeout(300)
             ->run();
-        $this->setSiteInstalled($result->wasSuccessful() && $this->siteInstalled);
+        $this->setSiteInstalled($result->wasSuccessful() && count($tables) > 10);
         return $this->siteInstalled;
     }
 
