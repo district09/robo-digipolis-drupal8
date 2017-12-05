@@ -332,6 +332,7 @@ class RoboFileBase extends AbstractRoboFile
                 $collection->drush('cset system.site uuid ' . $uuid);
             }
             $collection
+                ->drush('cc drush')
                 ->drush('cr')
                 ->drush('cim');
 
@@ -344,6 +345,7 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection
+            ->drush('cc drush')
             ->drush('cr');
 
         $locale = $this->taskExecStack()
@@ -361,6 +363,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->drush('cc drush')
             ->drush('cr')
             ->drush('sset system.maintenance_mode 0');
 
@@ -442,6 +445,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->siteInstall($profile)
             ->drush('sset system.maintenance_mode 1')
+            ->drush('cc drush')
             ->drush('cr');
 
         $locale = $this->taskExecStack()
@@ -682,6 +686,7 @@ class RoboFileBase extends AbstractRoboFile
             $collection->drush('cset system.site uuid ' . $uuid);
         }
         $collection
+            ->drush('cc drush')
             ->drush('cr')
             ->drush('cim');
 
@@ -691,6 +696,7 @@ class RoboFileBase extends AbstractRoboFile
 
         $collection->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->drush('cc drush')
             ->drush('cr');
 
         return $collection;
