@@ -317,6 +317,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->drush('cc drush')
             ->drush('sset system.maintenance_mode 1');
 
         // When uninstalling modules inside update hook,
@@ -350,6 +351,7 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
+            ->exec('vendor/bin/drush cc drush')
             ->exec($this->localeCheckCommand())
             ->run()
             ->wasSuccessful();
@@ -444,8 +446,8 @@ class RoboFileBase extends AbstractRoboFile
         }
         $collection
             ->siteInstall($profile)
-            ->drush('sset system.maintenance_mode 1')
             ->drush('cc drush')
+            ->drush('sset system.maintenance_mode 1')
             ->drush('cr');
 
         $locale = $this->taskExecStack()
