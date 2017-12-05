@@ -196,8 +196,8 @@ class RoboFileBase extends AbstractRoboFile
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
-            ->exec('../vendor/bin/drush cc drush')
-            ->exec('../vendor/bin/drush cr');
+            ->exec('../vendor/bin/drush cr')
+            ->exec('../vendor/bin/drush cc drush');
     }
 
     protected function buildTask($archivename = null)
@@ -317,6 +317,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->drush('cr')
             ->drush('cc drush')
             ->drush('sset system.maintenance_mode 1');
 
@@ -333,8 +334,8 @@ class RoboFileBase extends AbstractRoboFile
                 $collection->drush('cset system.site uuid ' . $uuid);
             }
             $collection
-                ->drush('cc drush')
                 ->drush('cr')
+                ->drush('cc drush')
                 ->drush('cim');
 
             $collection->taskExecStack()
@@ -346,11 +347,12 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection
-            ->drush('cc drush')
-            ->drush('cr');
+            ->drush('cr')
+            ->drush('cc drush');
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
+            ->exec('vendor/bin/drush cr')
             ->exec('vendor/bin/drush cc drush')
             ->exec($this->localeCheckCommand())
             ->run()
@@ -365,8 +367,8 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->drush('cc drush')
             ->drush('cr')
+            ->drush('cc drush')
             ->drush('sset system.maintenance_mode 0');
 
         return $collection;
@@ -688,8 +690,8 @@ class RoboFileBase extends AbstractRoboFile
             $collection->drush('cset system.site uuid ' . $uuid);
         }
         $collection
-            ->drush('cc drush')
             ->drush('cr')
+            ->drush('cc drush')
             ->drush('cim');
 
         $collection->taskExecStack()
@@ -698,8 +700,8 @@ class RoboFileBase extends AbstractRoboFile
 
         $collection->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->drush('cc drush')
-            ->drush('cr');
+            ->drush('cr')
+            ->drush('cc drush');
 
         return $collection;
     }
