@@ -207,7 +207,7 @@ class RoboFileBase extends AbstractRoboFile
             ->wasSuccessful();
 
         if ($purge) {
-          $task->exec('../vendor/bin/drush p-invalidate everything');
+            $task->exec('../vendor/bin/drush p-invalidate everything');
         }
 
         return $task;
