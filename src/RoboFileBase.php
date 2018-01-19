@@ -199,10 +199,10 @@ class RoboFileBase extends AbstractRoboFile
             ->exec('../vendor/bin/drush cr')
             ->exec('../vendor/bin/drush cc drush');
 
-        $purge =  $this->taskSsh($worker, $auth)
+        $purge = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
-            ->exec('cd -P .. && ' . $this->checkModuleCommand('purge'))
+            ->exec('cd -P .. && ' . $this->checkModuleCommand('purge_drush'))
             ->run()
             ->wasSuccessful();
 
