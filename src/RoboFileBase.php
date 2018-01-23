@@ -202,12 +202,14 @@ class RoboFileBase extends AbstractRoboFile
         $purge = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
-            ->exec('cd -P .. && ' . $this->checkModuleCommand('purge_drush'))
+            // Check if the drush_purge module is enabled and if an 'everything'
+            // purger is configured.
+            ->exec('cd -P .. && ' . $this->checkModuleCommand('purge_drush') . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
             ->run()
             ->wasSuccessful();
 
         if ($purge) {
-            $task->exec('../vendor/bin/drush p-invalidate everything');
+            $task->exec('../vendor/bin/drush pinv everything');
         }
 
         return $task;
