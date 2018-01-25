@@ -193,11 +193,26 @@ class RoboFileBase extends AbstractRoboFile
     protected function clearCacheTask($worker, $auth, $remote)
     {
         $currentWebRoot = $remote['currentdir'];
-        return $this->taskSsh($worker, $auth)
+        $task = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
             ->exec('../vendor/bin/drush cr')
             ->exec('../vendor/bin/drush cc drush');
+
+        $purge = $this->taskSsh($worker, $auth)
+            ->remoteDirectory($currentWebRoot, true)
+            ->timeout(120)
+            // Check if the drush_purge module is enabled and if an 'everything'
+            // purger is configured.
+            ->exec('cd -P .. && ' . $this->checkModuleCommand('purge_drush') . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
+            ->run()
+            ->wasSuccessful();
+
+        if ($purge) {
+            $task->exec('../vendor/bin/drush pinv everything');
+        }
+
+        return $task;
     }
 
     protected function buildTask($archivename = null)
@@ -354,7 +369,7 @@ class RoboFileBase extends AbstractRoboFile
             ->dir($this->getConfig()->get('digipolis.root.project'))
             ->exec('vendor/bin/drush cr')
             ->exec('vendor/bin/drush cc drush')
-            ->exec($this->localeCheckCommand())
+            ->exec($this->checkModuleCommand('locale'))
             ->run()
             ->wasSuccessful();
 
@@ -454,7 +469,7 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec($this->localeCheckCommand())
+            ->exec($this->checkModuleCommand('locale'))
             ->run()
             ->wasSuccessful();
 
@@ -546,7 +561,7 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @return string
      */
-    protected function localeCheckCommand()
+    protected function checkModuleCommand($module)
     {
         $this->readProperties();
 
@@ -557,13 +572,13 @@ class RoboFileBase extends AbstractRoboFile
             return  'vendor/bin/drush '
                 . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
                 . 'pml --core --fields=name --status=enabled --type=module --format=list '
-                . '| grep "(locale)"';
+                . '| grep "(' . $module . ')"';
         }
 
         return 'vendor/bin/drush '
             . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
             . 'pml --core --fields=name --status=enabled --type=module --format=list '
-            . '| grep "^locale$"';
+            . '| grep "^' . $module . '$"';
     }
 
     /**
