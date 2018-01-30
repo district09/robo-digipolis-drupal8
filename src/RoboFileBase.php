@@ -204,7 +204,7 @@ class RoboFileBase extends AbstractRoboFile
             ->timeout(120)
             // Check if the drush_purge module is enabled and if an 'everything'
             // purger is configured.
-            ->exec('cd -P .. && ' . $this->checkModuleCommand('purge_drush') . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
+            ->exec($this->checkModuleCommand('purge_drush') . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
             ->run()
             ->wasSuccessful();
 
@@ -367,8 +367,6 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec('vendor/bin/drush cr')
-            ->exec('vendor/bin/drush cc drush')
             ->exec($this->checkModuleCommand('locale'))
             ->run()
             ->wasSuccessful();
@@ -568,15 +566,21 @@ class RoboFileBase extends AbstractRoboFile
         $drushVersion = $this->taskDrushStack()
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->getVersion();
+        $webroot = $this->getConfig()->get('digipolis.root.web');
+        $projectroot = $this->getConfig()->get('digipolis.root.project');
         if (version_compare($drushVersion, '9.0', '<')) {
-            return  'vendor/bin/drush '
-                . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+            return  'cd ' . $projectroot . ' && '
+                . 'vendor/bin/drush -r ' . $webroot . ' cr && '
+                . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
+                . 'vendor/bin/drush -r ' . $webroot . ' '
                 . 'pml --core --fields=name --status=enabled --type=module --format=list '
                 . '| grep "(' . $module . ')"';
         }
 
-        return 'vendor/bin/drush '
-            . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+        return 'cd ' . $projectroot . ' && '
+            . 'vendor/bin/drush -r ' . $webroot . ' cr && '
+            . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
+            . 'vendor/bin/drush -r ' . $webroot . ' '
             . 'pml --core --fields=name --status=enabled --type=module --format=list '
             . '| grep "^' . $module . '$"';
     }
