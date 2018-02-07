@@ -204,7 +204,7 @@ class RoboFileBase extends AbstractRoboFile
             ->timeout(120)
             // Check if the drush_purge module is enabled and if an 'everything'
             // purger is configured.
-            ->exec($this->checkModuleCommand('purge_drush') . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything', $remote)
+            ->exec($this->checkModuleCommand('purge_drush', $remote) . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
             ->run()
             ->wasSuccessful();
 
