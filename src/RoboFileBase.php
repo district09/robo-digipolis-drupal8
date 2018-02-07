@@ -193,11 +193,26 @@ class RoboFileBase extends AbstractRoboFile
     protected function clearCacheTask($worker, $auth, $remote)
     {
         $currentWebRoot = $remote['currentdir'];
-        return $this->taskSsh($worker, $auth)
+        $task = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
             ->timeout(120)
             ->exec('../vendor/bin/drush cr')
             ->exec('../vendor/bin/drush cc drush');
+
+        $purge = $this->taskSsh($worker, $auth)
+            ->remoteDirectory($currentWebRoot, true)
+            ->timeout(120)
+            // Check if the drush_purge module is enabled and if an 'everything'
+            // purger is configured.
+            ->exec($this->checkModuleCommand('purge_drush', $remote) . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
+            ->run()
+            ->wasSuccessful();
+
+        if ($purge) {
+            $task->exec('../vendor/bin/drush pinv everything');
+        }
+
+        return $task;
     }
 
     protected function buildTask($archivename = null)
@@ -352,9 +367,7 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec('vendor/bin/drush cr')
-            ->exec('vendor/bin/drush cc drush')
-            ->exec($this->localeCheckCommand())
+            ->exec($this->checkModuleCommand('locale'))
             ->run()
             ->wasSuccessful();
 
@@ -419,6 +432,11 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection = $this->collectionBuilder();
+        $collection->rollback(
+            $this->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+                ->drush('sql-drop')
+        );
         $drushInstall = $collection->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbUrl(
@@ -454,7 +472,7 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec($this->localeCheckCommand())
+            ->exec($this->checkModuleCommand('locale'))
             ->run()
             ->wasSuccessful();
 
@@ -546,24 +564,30 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @return string
      */
-    protected function localeCheckCommand()
+    protected function checkModuleCommand($module, $remote = null)
     {
         $this->readProperties();
 
         $drushVersion = $this->taskDrushStack()
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->getVersion();
+        $webroot = $remote ? $remote['webdir'] : $this->getConfig()->get('digipolis.root.web');
+        $projectroot = $remote ? $remote['releasesdir'] . '/' . $remote['time'] : $this->getConfig()->get('digipolis.root.project');
         if (version_compare($drushVersion, '9.0', '<')) {
-            return  'vendor/bin/drush '
-                . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+            return  'cd ' . $projectroot . ' && '
+                . 'vendor/bin/drush -r ' . $webroot . ' cr && '
+                . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
+                . 'vendor/bin/drush -r ' . $webroot . ' '
                 . 'pml --core --fields=name --status=enabled --type=module --format=list '
-                . '| grep "(locale)"';
+                . '| grep "(' . $module . ')"';
         }
 
-        return 'vendor/bin/drush '
-            . '-r ' . $this->getConfig()->get('digipolis.root.web') . ' '
+        return 'cd ' . $projectroot . ' && '
+            . 'vendor/bin/drush -r ' . $webroot . ' cr && '
+            . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
+            . 'vendor/bin/drush -r ' . $webroot . ' '
             . 'pml --core --fields=name --status=enabled --type=module --format=list '
-            . '| grep "^locale$"';
+            . '| grep "^' . $module . '$"';
     }
 
     /**
