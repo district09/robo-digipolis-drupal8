@@ -432,6 +432,11 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection = $this->collectionBuilder();
+        $collection->rollback(
+            $this->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+                ->drush('sql-drop')
+        );
         $drushInstall = $collection->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbUrl(
