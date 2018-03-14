@@ -13,6 +13,6 @@ remote:
   opcache:
     env: 'fcgi'
     host: '/var/run/php_fpm_[user].sock'
-  cleandir_limit: 3
+  cleandir_limit: 2
 local:
   filesdir: '[web_root]/sites/default'
