@@ -204,7 +204,7 @@ class RoboFileBase extends AbstractRoboFile
             ->timeout(120)
             // Check if the drush_purge module is enabled and if an 'everything'
             // purger is configured.
-            ->exec($this->checkModuleCommand('purge_drush', $remote) . ' && cd ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
+            ->exec($this->checkModuleCommand('purge_drush', $remote) . ' && cd -P ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
             ->run()
             ->wasSuccessful();
 
@@ -571,10 +571,10 @@ class RoboFileBase extends AbstractRoboFile
         $drushVersion = $this->taskDrushStack()
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->getVersion();
-        $webroot = $remote ? $remote['webdir'] : $this->getConfig()->get('digipolis.root.web');
-        $projectroot = $remote ? $remote['releasesdir'] . '/' . $remote['time'] : $this->getConfig()->get('digipolis.root.project');
+        $webroot = $remote ? $remote['currentdir'] : $this->getConfig()->get('digipolis.root.web');
+        $projectroot = $remote ? $remote['currentdir'] . '/..' : $this->getConfig()->get('digipolis.root.project');
         if (version_compare($drushVersion, '9.0', '<')) {
-            return  'cd ' . $projectroot . ' && '
+            return  'cd -P ' . $projectroot . ' && '
                 . 'vendor/bin/drush -r ' . $webroot . ' cr && '
                 . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
                 . 'vendor/bin/drush -r ' . $webroot . ' '
@@ -582,7 +582,7 @@ class RoboFileBase extends AbstractRoboFile
                 . '| grep "(' . $module . ')"';
         }
 
-        return 'cd ' . $projectroot . ' && '
+        return 'cd -P ' . $projectroot . ' && '
             . 'vendor/bin/drush -r ' . $webroot . ' cr && '
             . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
             . 'vendor/bin/drush -r ' . $webroot . ' '
