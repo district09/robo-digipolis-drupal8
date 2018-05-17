@@ -578,7 +578,7 @@ class RoboFileBase extends AbstractRoboFile
                 . 'vendor/bin/drush -r ' . $webroot . ' cr && '
                 . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
                 . 'vendor/bin/drush -r ' . $webroot . ' '
-                . 'pml --core --fields=name --status=enabled --type=module --format=list '
+                . 'pml --fields=name --status=enabled --type=module --format=list '
                 . '| grep "(' . $module . ')"';
         }
 
@@ -586,7 +586,7 @@ class RoboFileBase extends AbstractRoboFile
             . 'vendor/bin/drush -r ' . $webroot . ' cr && '
             . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
             . 'vendor/bin/drush -r ' . $webroot . ' '
-            . 'pml --core --fields=name --status=enabled --type=module --format=list '
+            . 'pml --fields=name --status=enabled --type=module --format=list '
             . '| grep "^' . $module . '$"';
     }
 
