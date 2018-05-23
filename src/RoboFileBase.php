@@ -209,7 +209,7 @@ class RoboFileBase extends AbstractRoboFile
             ->wasSuccessful();
 
         if ($purge) {
-            $task->exec('../vendor/bin/drush pinv everything');
+            $task->exec('../vendor/bin/drush pinv everything -y');
         }
 
         return $task;
