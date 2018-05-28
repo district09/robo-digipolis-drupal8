@@ -31,9 +31,12 @@ class RoboFileBase extends AbstractRoboFile
 
     protected $siteInstalled = null;
 
+    protected $siteInstalledTested;
+
     public function setSiteInstalled($installed)
     {
         $this->siteInstalled = $installed;
+        $this->siteInstalledTested = false;
     }
 
     protected function isSiteInstalled($worker, AbstractAuth $auth, $remote)
@@ -51,6 +54,7 @@ class RoboFileBase extends AbstractRoboFile
             ->timeout(300)
             ->run();
         $this->setSiteInstalled($result->wasSuccessful() && count($tables) > 10);
+        $this->siteInstalledTested = true;
         return $this->siteInstalled;
     }
 
@@ -157,6 +161,13 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function installTask($worker, AbstractAuth $auth, $remote, $extra = [], $force = false)
     {
+        if ($this->siteInstalledTested) {
+            $this->siteInstalled = null;
+            if ($this->isSiteInstalled($worker, $auth, $remote)) {
+                return $this->collectionBuilder();
+            }
+        }
+
         $extra += ['config-import' => false];
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $install = 'vendor/bin/robo digipolis:install-drupal8 '
