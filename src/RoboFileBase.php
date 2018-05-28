@@ -169,7 +169,7 @@ class RoboFileBase extends AbstractRoboFile
               . ($force ? ' --force' : '' )
               . ($extra['config-import'] ? ' --config-import' : '');
 
-        if ($this->siteInstalledTested) {
+        if (!$force && $this->siteInstalledTested) {
             $install = '[[ $(../vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) > 10 ]] || ' . $install;
         }
 
