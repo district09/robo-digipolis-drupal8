@@ -45,15 +45,15 @@ class RoboFileBase extends AbstractRoboFile
             return $this->siteInstalled;
         }
         $currentWebRoot = $remote['currentdir'];
-        $tables = array();
+        $count = 0;
         $result = $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentWebRoot, true)
-            ->exec('../vendor/bin/drush sql-query "SHOW TABLES"', function ($output) use (&$tables) {
-                $tables = array_merge($tables, array_filter(explode("\n", $output)));
+            ->exec('../vendor/bin/drush sql-query "SHOW TABLES" | wc --lines', function ($output) use (&$count) {
+                $count = (int) $output;
             })
             ->timeout(300)
             ->run();
-        $this->setSiteInstalled($result->wasSuccessful() && count($tables) > 10);
+        $this->setSiteInstalled($result->wasSuccessful() && $count > 10);
         $this->siteInstalledTested = true;
         return $this->siteInstalled;
     }
@@ -161,13 +161,6 @@ class RoboFileBase extends AbstractRoboFile
 
     protected function installTask($worker, AbstractAuth $auth, $remote, $extra = [], $force = false)
     {
-        if ($this->siteInstalledTested) {
-            $this->siteInstalled = null;
-            if ($this->isSiteInstalled($worker, $auth, $remote)) {
-                return $this->collectionBuilder();
-            }
-        }
-
         $extra += ['config-import' => false];
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $install = 'vendor/bin/robo digipolis:install-drupal8 '
@@ -175,6 +168,10 @@ class RoboFileBase extends AbstractRoboFile
               . ' --site-name=' . escapeshellarg($extra['site-name'])
               . ($force ? ' --force' : '' )
               . ($extra['config-import'] ? ' --config-import' : '');
+
+        if ($this->siteInstalledTested) {
+            $install = '[[ $(../vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) > 10 ]] || ' . $install;
+        }
 
         return $this->taskSsh($worker, $auth)
             ->remoteDirectory($currentProjectRoot, true)
