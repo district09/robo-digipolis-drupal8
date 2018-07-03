@@ -149,10 +149,6 @@ class RoboFileBase extends AbstractRoboFile
                 ->taskSsh($worker, $auth)
                     ->remoteDirectory($currentWebRoot, true)
                     ->timeout(60)
-                    // Drupal console needs to bootstrap Drupal to load its
-                    // commands. If something goes wrong during bootstrap we
-                    // can't drop the db. So we use drush for now.
-                    // ->exec('vendor/bin/drupal database:drop -y');
                     ->exec('../vendor/bin/drush sql-drop -y');
 
         }
