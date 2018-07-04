@@ -724,16 +724,13 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->drush('cr')
             ->drush('cc drush')
-            ->drush('cim');
+            ->drush('cim')
+            ->drush('cr')
+            ->drush('cc drush');
 
         $collection->taskExecStack()
             ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
             ->exec($this->varnishCheckCommand());
-
-        $collection->taskDrushStack('vendor/bin/drush')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->drush('cr')
-            ->drush('cc drush');
 
         return $collection;
     }
