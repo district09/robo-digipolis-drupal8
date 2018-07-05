@@ -333,18 +333,16 @@ class RoboFileBase extends AbstractRoboFile
     {
         $this->readProperties();
         $collection = $this->collectionBuilder();
+
+        $collection
+            ->taskExecStack()
+            ->exec('cd $(ls -vdr ' . $this->getConfig()->get('remote.releasesdir') . '/* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
+
         $collection
             ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->drush('cr')
             ->drush('cc drush')
-            ->drush('sset system.maintenance_mode 1');
-
-        // When uninstalling modules inside update hook,
-        // we get "dependency on a non-existent service" exception.
-        // Therefore switch to drush for excecuting update hooks.
-        $collection->taskDrushStack('vendor/bin/drush')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->updateDb();
 
         if ($opts['config-import']) {
