@@ -2,10 +2,12 @@
 
 namespace DigipolisGent\Robo\Drupal8;
 
+use Consolidation\AnnotatedCommand\CommandError;
 use DigipolisGent\Robo\Helpers\AbstractRoboFile;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\AbstractAuth;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
 use RandomLib\Factory;
+use Robo\Result;
 use SecurityLib\Strength;
 
 class RoboFileBase extends AbstractRoboFile
@@ -420,13 +422,18 @@ class RoboFileBase extends AbstractRoboFile
     ) {
         $this->readProperties();
         $app_root = $this->getConfig()->get('digipolis.root.web', false);
-        $site_path = 'sites/default';
+        $site_path = $app_root . '/sites/default';
 
-        if (is_file($app_root . '/sites/default/settings.php')) {
-            include $app_root . '/sites/default/settings.php';
+        if (is_file($site_path . '/settings.php')) {
+            chmod($site_path . '/settings.php', 664);
+            include $site_path . '/settings.php';
         }
-        elseif (is_file($app_root . '/sites/default/settings.local.php')) {
-            include $app_root . '/sites/default/settings.local.php';
+        elseif (is_file($site_path . '/settings.local.php')) {
+            chmod($site_path, 775);
+            include $site_path . '/settings.local.php';
+        }
+        else {
+            return new CommandError('No settings file found.');
         }
 
         $config = $databases['default']['default'];
@@ -477,6 +484,10 @@ class RoboFileBase extends AbstractRoboFile
             ->drush('cc drush')
             ->drush('sset system.maintenance_mode 1')
             ->drush('cr');
+
+        $collection->taskFilesystemStack()
+            ->chmod($site_path . '/settings.php', 444)
+            ->chmod($site_path, 555);
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
