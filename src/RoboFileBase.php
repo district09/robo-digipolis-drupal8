@@ -2,16 +2,17 @@
 
 namespace DigipolisGent\Robo\Drupal8;
 
+use Consolidation\AnnotatedCommand\CommandError;
 use DigipolisGent\Robo\Helpers\AbstractRoboFile;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\AbstractAuth;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
 use RandomLib\Factory;
+use Robo\Result;
 use SecurityLib\Strength;
 
 class RoboFileBase extends AbstractRoboFile
 {
     use \Boedah\Robo\Task\Drush\loadTasks;
-    use \DigipolisGent\Robo\Task\DrupalConsole\loadTasks;
     use \DigipolisGent\Robo\Task\Package\Drupal8\loadTasks;
     use \DigipolisGent\Robo\Task\CodeValidation\loadTasks;
 
@@ -149,10 +150,6 @@ class RoboFileBase extends AbstractRoboFile
                 ->taskSsh($worker, $auth)
                     ->remoteDirectory($currentWebRoot, true)
                     ->timeout(60)
-                    // Drupal console needs to bootstrap Drupal to load its
-                    // commands. If something goes wrong during bootstrap we
-                    // can't drop the db. So we use drush for now.
-                    // ->exec('vendor/bin/drupal database:drop -y');
                     ->exec('../vendor/bin/drush sql-drop -y');
 
         }
@@ -337,18 +334,16 @@ class RoboFileBase extends AbstractRoboFile
     {
         $this->readProperties();
         $collection = $this->collectionBuilder();
+
+        $collection
+            ->taskExecStack()
+            ->exec('cd $(ls -vdr ' . $this->getConfig()->get('remote.releasesdir') . '/* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
+
         $collection
             ->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->drush('cr')
             ->drush('cc drush')
-            ->drush('sset system.maintenance_mode 1');
-
-        // When uninstalling modules inside update hook,
-        // we get "dependency on a non-existent service" exception.
-        // Therefore switch to drush for excecuting update hooks.
-        $collection->taskDrushStack('vendor/bin/drush')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->updateDb();
 
         if ($opts['config-import']) {
@@ -420,13 +415,18 @@ class RoboFileBase extends AbstractRoboFile
     ) {
         $this->readProperties();
         $app_root = $this->getConfig()->get('digipolis.root.web', false);
-        $site_path = 'sites/default';
+        $site_path = $app_root . '/sites/default';
 
-        if (is_file($app_root . '/sites/default/settings.php')) {
-            include $app_root . '/sites/default/settings.php';
+        if (is_file($site_path . '/settings.php')) {
+            chmod($site_path . '/settings.php', 664);
+            include $site_path . '/settings.php';
         }
-        elseif (is_file($app_root . '/sites/default/settings.local.php')) {
-            include $app_root . '/sites/default/settings.local.php';
+        elseif (is_file($site_path . '/settings.local.php')) {
+            chmod($site_path, 775);
+            include $site_path . '/settings.local.php';
+        }
+        else {
+            return new CommandError('No settings file found.');
         }
 
         $config = $databases['default']['default'];
@@ -477,6 +477,10 @@ class RoboFileBase extends AbstractRoboFile
             ->drush('cc drush')
             ->drush('sset system.maintenance_mode 1')
             ->drush('cr');
+
+        $collection->taskFilesystemStack()
+            ->chmod($site_path . '/settings.php', 444)
+            ->chmod($site_path, 555);
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
@@ -724,16 +728,13 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->drush('cr')
             ->drush('cc drush')
-            ->drush('cim');
+            ->drush('cim')
+            ->drush('cr')
+            ->drush('cc drush');
 
         $collection->taskExecStack()
             ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
             ->exec($this->varnishCheckCommand());
-
-        $collection->taskDrushStack('vendor/bin/drush')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->drush('cr')
-            ->drush('cc drush');
 
         return $collection;
     }
