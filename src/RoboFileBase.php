@@ -13,7 +13,6 @@ use SecurityLib\Strength;
 class RoboFileBase extends AbstractRoboFile
 {
     use \Boedah\Robo\Task\Drush\loadTasks;
-    use \DigipolisGent\Robo\Task\DrupalConsole\loadTasks;
     use \DigipolisGent\Robo\Task\Package\Drupal8\loadTasks;
     use \DigipolisGent\Robo\Task\CodeValidation\loadTasks;
 
