@@ -418,11 +418,11 @@ class RoboFileBase extends AbstractRoboFile
         $site_path = $app_root . '/sites/default';
 
         if (is_file($site_path . '/settings.php')) {
-            chmod($site_path . '/settings.php', 664);
+            chmod($site_path . '/settings.php', 0664);
             include $site_path . '/settings.php';
         }
         elseif (is_file($site_path . '/settings.local.php')) {
-            chmod($site_path, 775);
+            chmod($site_path, 0775);
             include $site_path . '/settings.local.php';
         }
         else {
@@ -479,8 +479,8 @@ class RoboFileBase extends AbstractRoboFile
             ->drush('cr');
 
         $collection->taskFilesystemStack()
-            ->chmod($site_path . '/settings.php', 444)
-            ->chmod($site_path, 555);
+            ->chmod($site_path . '/settings.php', 0444)
+            ->chmod($site_path, 0555);
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
