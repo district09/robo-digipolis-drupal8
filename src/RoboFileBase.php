@@ -336,7 +336,8 @@ class RoboFileBase extends AbstractRoboFile
 
         $collection
             ->taskExecStack()
-            ->exec('cd -P $(ls -vdr ' . $this->getConfig()->get('digipolis.root.project') . '/../* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
+            ->exec('cd -P $(ls -vdr ' . $this->getConfig()->get('digipolis.root.project') .
+                '/../* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
 
         $collection
             ->taskDrushStack('vendor/bin/drush')
@@ -488,8 +489,8 @@ class RoboFileBase extends AbstractRoboFile
             ->run()
             ->wasSuccessful();
 
-      $collection->taskDrushStack('vendor/bin/drush')
-        ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+        $collection->taskDrushStack('vendor/bin/drush')
+          ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
 
         if ($locale) {
             $collection
