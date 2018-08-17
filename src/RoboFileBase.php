@@ -166,7 +166,7 @@ class RoboFileBase extends AbstractRoboFile
               . ($extra['config-import'] ? ' --config-import' : '');
 
         if (!$force && $this->siteInstalledTested) {
-            $install = '[[ $(vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) > 10 ]] || ' . $install;
+            $install = '[[ $(vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) -gt 10 ]] || ' . $install;
         }
 
         return $this->taskSsh($worker, $auth)
