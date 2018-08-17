@@ -37,7 +37,6 @@ class RoboFileBase extends AbstractRoboFile
     public function setSiteInstalled($installed)
     {
         $this->siteInstalled = $installed;
-        $this->siteInstalledTested = false;
     }
 
     protected function isSiteInstalled($worker, AbstractAuth $auth, $remote)
@@ -55,7 +54,7 @@ class RoboFileBase extends AbstractRoboFile
             ->timeout(300)
             ->run();
         $this->setSiteInstalled($result->wasSuccessful() && $count > 10);
-        $this->siteInstalledTested = true;
+
         return $this->siteInstalled;
     }
 
