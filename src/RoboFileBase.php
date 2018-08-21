@@ -56,6 +56,7 @@ class RoboFileBase extends AbstractRoboFile
             ->run();
         $this->setSiteInstalled($result->wasSuccessful() && $count > 10);
         $this->siteInstalledTested = true;
+
         return $this->siteInstalled;
     }
 
@@ -167,7 +168,7 @@ class RoboFileBase extends AbstractRoboFile
               . ($extra['config-import'] ? ' --config-import' : '');
 
         if (!$force && $this->siteInstalledTested) {
-            $install = '[[ $(vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) > 10 ]] || ' . $install;
+            $install = '[[ $(vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) -gt 10 ]] || ' . $install;
         }
 
         return $this->taskSsh($worker, $auth)
@@ -337,7 +338,8 @@ class RoboFileBase extends AbstractRoboFile
 
         $collection
             ->taskExecStack()
-            ->exec('cd $(ls -vdr ' . $this->getConfig()->get('remote.releasesdir') . '/* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
+            ->exec('cd -P $(ls -vdr ' . $this->getConfig()->get('digipolis.root.project') .
+                '/../* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
 
         $collection
             ->taskDrushStack('vendor/bin/drush')
@@ -374,6 +376,9 @@ class RoboFileBase extends AbstractRoboFile
             ->run()
             ->wasSuccessful();
 
+        $collection->taskDrushStack('vendor/bin/drush')
+          ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+
         if ($locale) {
             $collection
                 ->drush('locale-check')
@@ -381,8 +386,6 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection
-            ->taskDrushStack('vendor/bin/drush')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->drush('cr')
             ->drush('cc drush')
             ->drush('sset system.maintenance_mode 0');
@@ -488,10 +491,13 @@ class RoboFileBase extends AbstractRoboFile
             ->run()
             ->wasSuccessful();
 
+        $collection->taskDrushStack('vendor/bin/drush')
+          ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+
         if ($locale) {
             $collection
-                ->drush('locale-check')
-                ->drush('locale-update');
+              ->drush('locale-check')
+              ->drush('locale-update');
         }
 
         if ($opts['config-import']) {
@@ -505,13 +511,11 @@ class RoboFileBase extends AbstractRoboFile
             $collection->taskExecStack()
                 ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
                 ->exec($this->varnishCheckCommand());
-
-            $collection->taskDrushStack('vendor/bin/drush')
-                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
         }
 
-        $collection
-            ->drush('sset system.maintenance_mode 0');
+        $collection->taskDrushStack('vendor/bin/drush')
+          ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+          ->drush('sset system.maintenance_mode 0');
 
         return $collection;
     }
