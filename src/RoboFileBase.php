@@ -491,16 +491,16 @@ class RoboFileBase extends AbstractRoboFile
             ->run()
             ->wasSuccessful();
 
-        $collection->taskDrushStack('vendor/bin/drush')
-          ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
-
         if ($locale) {
-            $collection
-              ->drush('locale-check')
-              ->drush('locale-update');
+            $collection->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+                ->drush('locale-check')
+                ->drush('locale-update');
         }
 
         if ($opts['config-import']) {
+            $collection->taskDrushStack('vendor/bin/drush')
+                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
             $uuid = $this->getSiteUuid();
             if ($uuid) {
                 $collection->drush('cset system.site uuid ' . $uuid);
