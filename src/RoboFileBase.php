@@ -838,7 +838,7 @@ class RoboFileBase extends AbstractRoboFile
         }
         $local = $this->getLocalSettings($opts['app']);
         $collection = parent::digipolisSyncLocal($host, $user, $keyFile, $opts);
-        if ($opts['data']) {
+        if ($opts['files']) {
             $collection->taskExecStack()
                 ->exec('rm -rf ' . $local['filesdir'] . '/files')
                 ->exec('mv ' . $local['filesdir'] . '/public ' . $local['filesdir'] . '/files')
