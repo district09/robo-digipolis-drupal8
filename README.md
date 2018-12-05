@@ -37,6 +37,7 @@ class RoboFile extends RoboFileBase
             'profile' => 'standard',
             'force-install' => false,
             'config-import' => false,
+            'existing-config' => false,
             'worker' => null,
         ]
     ) {
