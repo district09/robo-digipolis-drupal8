@@ -408,7 +408,7 @@ class RoboFileBase extends AbstractRoboFile
      * @option site-name The site name to set during install.
      * @option force Force the installation. This will drop all tables in the
      *   current database.
-     * @option config-import Import configuration when installing the site.
+     * @option config-import Import configuration after installing the site.
      * @option existing-config Install the site from existing configuration.
      */
     public function digipolisInstallDrupal8(
