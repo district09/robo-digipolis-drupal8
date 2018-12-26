@@ -251,6 +251,7 @@ class RoboFileBase extends AbstractRoboFile
      * @options force-install Force a new isntallation of the Drupal8 site. This
      *   will drop all tables in the current database.
      * @option config-import Import configuration after updating the site.
+     * @option existing-config Import configuration when installing the site.
      * @option worker The IP of the worker server. Defaults to the first server
      *   given in the arguments.
      *
@@ -305,6 +306,7 @@ class RoboFileBase extends AbstractRoboFile
      * @options force-install Force a new isntallation of the Drupal8 site. This
      *   will drop all tables in the current database.
      * @option config-import Import configuration after updating the site.
+     * @option existing-config Install the site from existing configuration.
      *
      * @usage --app=myapp --profile=myprofile --site-name='My D8 Site' 10.25.2.178 sshuser /home/myuser/.ssh/id_rsa
      */
@@ -318,6 +320,7 @@ class RoboFileBase extends AbstractRoboFile
             'profile' => 'standard',
             'force-install' => false,
             'config-import' => false,
+            'existing-config' => false,
         ]
     ) {
         $remote = $this->getRemoteSettings($server, $user, $privateKeyFile, $opts['app']);
@@ -405,6 +408,8 @@ class RoboFileBase extends AbstractRoboFile
      * @option site-name The site name to set during install.
      * @option force Force the installation. This will drop all tables in the
      *   current database.
+     * @option config-import Import configuration when installing the site.
+     * @option existing-config Install the site from existing configuration.
      */
     public function digipolisInstallDrupal8(
         $profile = 'standard',
@@ -412,6 +417,7 @@ class RoboFileBase extends AbstractRoboFile
             'site-name' => 'Drupal',
             'force' => false,
             'config-import' => false,
+            'existing-config' => false,
             'account-name' => 'admin',
             'account-mail' => 'admin@example.com',
             'account-pass' => null
