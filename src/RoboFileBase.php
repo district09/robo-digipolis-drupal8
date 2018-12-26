@@ -264,6 +264,7 @@ class RoboFileBase extends AbstractRoboFile
             'profile' => 'standard',
             'force-install' => false,
             'config-import' => false,
+            'existing-config' => false,
             'worker' => null,
             'ssh-verbose' => false,
         ]
@@ -465,7 +466,8 @@ class RoboFileBase extends AbstractRoboFile
             ->siteName($opts['site-name'])
             ->accountName($opts['account-name'])
             ->accountMail($opts['account-mail'])
-            ->accountPass('"' . $opts['account-pass'] . '"');
+            ->accountPass('"' . $opts['account-pass'] . '"')
+            ->existingConfig($opts['existing-config']);
 
         if (!empty($config['prefix'])) {
             $drushInstall->dbPrefix($config['prefix']);
