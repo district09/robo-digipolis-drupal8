@@ -456,25 +456,35 @@ class RoboFileBase extends AbstractRoboFile
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
                 ->drush('sql-drop')
         );
-        $drushInstall = $collection->taskDrushStack('vendor/bin/drush')
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->dbUrl(
-                $config['driver'] . '://'
+        $dbUrl = false;
+        if ($config['driver'] === 'sqlite') {
+            $dbUrl = $config['driver'] . '://' . $config['database'];
+        }
+        if (!$dbUrl) {
+            $dbUrl = $config['driver'] . '://'
                 . $config['username'] . ':' . $config['password']
                 . '@' . $config['host']
                 . (isset($config['port']) && !empty($config['port'])
                     ? ':' . $config['port']
                     : ''
                 )
-                . '/' . $config['database']
-            )
-            ->dbSu($config['username'])
-            ->dbSuPw($config['password'])
+                . '/' . $config['database'];
+        }
+        $drushInstall = $collection->taskDrushStack('vendor/bin/drush')
+            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->dbUrl($dbUrl)
             ->siteName($opts['site-name'])
             ->accountName($opts['account-name'])
             ->accountMail($opts['account-mail'])
             ->accountPass('"' . $opts['account-pass'] . '"')
             ->existingConfig($opts['existing-config']);
+
+        if (isset($config['username']) && !empty($config['username'])) {
+            $drushInstall->dbSu($config['username']);
+        }
+        if (isset($config['password']) && !empty($config['password'])) {
+            $drushInstall->dbSuPw($config['password']);
+        }
 
         if (!empty($config['prefix'])) {
             $drushInstall->dbPrefix($config['prefix']);
