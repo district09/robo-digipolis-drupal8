@@ -34,30 +34,51 @@ class RoboFileBase extends AbstractRoboFile
 
     protected $siteInstalledTested;
 
-    public function setSiteInstalled($installed)
+    public function setSiteInstalled($installed, $alias = false)
     {
-        $this->siteInstalled = $installed;
-        $this->siteInstalledTested = false;
+        if ($alias === false) {
+            $this->siteInstalled = $installed;
+            $this->siteInstalledTested = false;
+            return;
+        }
+        if (is_null($this->siteInstalled)) {
+            $this->siteInstalled = [];
+            $this->siteInstalledTested = [];
+        }
+        $this->siteInstalled[$alias] = $installed;
+        $this->siteInstalledTested[$alias] = false;
     }
 
     protected function isSiteInstalled($worker, AbstractAuth $auth, $remote)
     {
-        if (!is_null($this->siteInstalled)) {
+        if (!is_null($this->siteInstalled) && $remote['aliases'] === false) {
             return $this->siteInstalled;
         }
-        $currentWebRoot = $remote['currentdir'];
-        $count = 0;
-        $result = $this->taskSsh($worker, $auth)
-            ->remoteDirectory($currentWebRoot, true)
-            ->exec('../vendor/bin/drush sql-query "SHOW TABLES" | wc --lines', function ($output) use (&$count) {
-                $count = (int) $output;
-            })
-            ->timeout(300)
-            ->run();
-        $this->setSiteInstalled($result->wasSuccessful() && $count > 10);
-        $this->siteInstalledTested = true;
+        if ($remote['aliases'] && is_array($this->siteInstalled) && count($this->siteInstalled) >= 1) {
+            // A site is installed if every single alias is installed.
+            return count(array_filter($this->siteInstalled)) === count($this->siteInstalled);
+        }
+        $aliases = $remote['aliases'] ?: [false];
+        foreach ($aliases as $alias) {
+            $currentWebRoot = $remote['currentdir'];
+            $count = 0;
+            $result = $this->taskSsh($worker, $auth)
+                ->remoteDirectory($currentWebRoot, true)
+                ->exec('../vendor/bin/drush ' . ($alias ? escapeshellarg('@' . $alias) : '') . ' sql-query "SHOW TABLES" | wc --lines', function ($output) use (&$count) {
+                    $count = (int) $output;
+                })
+                ->timeout(300)
+                ->run();
+            $this->setSiteInstalled($result->wasSuccessful() && $count > 10, $alias);
+            if ($alias === false) {
+                $this->siteInstalledTested = true;
+            }
+            else {
+                $this->siteInstalledTested[$alias] = true;
+            }
+        }
 
-        return $this->siteInstalled;
+        return $remote['aliases'] ? count(array_filter($this->siteInstalled)) === count($this->siteInstalled) : $this->siteInstalled;
     }
 
     public function digipolisValidateCode()
@@ -147,11 +168,14 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         if ($opts['data']) {
-            $collection
-                ->taskSsh($worker, $auth)
-                    ->remoteDirectory($currentWebRoot, true)
-                    ->timeout(60)
-                    ->exec('../vendor/bin/drush sql-drop -y');
+            $aliases = $remote['aliases'] ?: [false];
+            foreach($aliases as $alias) {
+              $collection
+                  ->taskSsh($worker, $auth)
+                      ->remoteDirectory($currentWebRoot, true)
+                      ->timeout(60)
+                      ->exec('../vendor/bin/drush ' . ($alias ? escapeshellarg('@' . $alias) : '') . ' sql-drop -y');
+            }
 
         }
         return $collection;
@@ -161,23 +185,33 @@ class RoboFileBase extends AbstractRoboFile
     {
         $extra += ['config-import' => false];
         $currentProjectRoot = $remote['currentdir'] . '/..';
-        $install = 'vendor/bin/robo digipolis:install-drupal8 '
-              . escapeshellarg($extra['profile'])
-              . ' --site-name=' . escapeshellarg($extra['site-name'])
-              . ($force ? ' --force' : '' )
-              . ($extra['config-import'] ? ' --config-import' : '')
-              . ($extra['existing-config'] ? ' --existing-config' : '');
+        $aliases = $remote['aliases'] ?: [false];
+        $collection = $this->collectionBuilder();
+        foreach ($aliases as $alias) {
+            $install = 'vendor/bin/robo digipolis:install-drupal8 '
+                  . escapeshellarg($extra['profile'])
+                  . ' --site-name=' . escapeshellarg($extra['site-name'])
+                  . ($force ? ' --force' : '' )
+                  . ($extra['config-import'] ? ' --config-import' : '')
+                  . ($extra['existing-config'] ? ' --existing-config' : '')
+                  . ($alias) ? '--alias=' . escapeshellarg($alias) : '';
 
-        if (!$force && $this->siteInstalledTested) {
-            $install = '[[ $(vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) -gt 10 ]] || ' . $install;
+            if (!$force) {
+                if (!$alias && $this->siteInstalledTested) {
+                    $install = '[[ $(vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) -gt 10 ]] || ' . $install;
+                }
+                elseif ($alias && is_array($this->siteInstalledTested) && isset($this->siteInstalledTested[$alias]) && $this->siteInstalledTested[$alias]) {
+                    $install = '[[ $(vendor/bin/drush ' . escapeshellarg('@' . $alias) . ' sql-query "SHOW TABLES" | wc --lines) -gt 10 ]] || ' . $install;
+                }
+            }
+
+            $collection->taskSsh($worker, $auth)
+                ->remoteDirectory($currentProjectRoot, true)
+                // Install can take a long time. Let's set it to 15 minutes.
+                ->timeout(900)
+                ->verbose($extra['ssh-verbose'])
+                ->exec($install);
         }
-
-        return $this->taskSsh($worker, $auth)
-            ->remoteDirectory($currentProjectRoot, true)
-            // Install can take a long time. Let's set it to 15 minutes.
-            ->timeout(900)
-            ->verbose($extra['ssh-verbose'])
-            ->exec($install);
     }
 
     protected function updateTask($worker, AbstractAuth $auth, $remote, $extra = [])
@@ -186,40 +220,50 @@ class RoboFileBase extends AbstractRoboFile
         $currentProjectRoot = $remote['currentdir'] . '/..';
         $update = 'vendor/bin/robo digipolis:update-drupal8';
         $update .= $extra['config-import'] ? ' --config-import' : '';
-        $collection = $this->collectionBuilder();
-        $collection
-            ->taskSsh($worker, $auth)
-                ->remoteDirectory($currentProjectRoot, true)
-                // Updates can take a long time. Let's set it to 15 minutes.
-                ->timeout(900)
-                ->verbose($extra['ssh-verbose'])
-                ->exec($update);
+        $aliases = $remote['aliases'] ?: [false];
+
+        foreach ($aliases as $alias) {
+            $aliasUpdate = $update . ($alias ? ' --alias=' . escapeshellarg($alias) : '');
+            $collection = $this->collectionBuilder();
+            $collection
+                ->taskSsh($worker, $auth)
+                    ->remoteDirectory($currentProjectRoot, true)
+                    // Updates can take a long time. Let's set it to 15 minutes.
+                    ->timeout(900)
+                    ->verbose($extra['ssh-verbose'])
+                    ->exec($aliasUpdate);
+        }
         return $collection;
     }
 
     protected function clearCacheTask($worker, $auth, $remote)
     {
         $currentWebRoot = $remote['currentdir'];
-        $task = $this->taskSsh($worker, $auth)
-            ->remoteDirectory($currentWebRoot, true)
-            ->timeout(120)
-            ->exec('../vendor/bin/drush cr')
-            ->exec('../vendor/bin/drush cc drush');
+        $aliases = $remote['aliases'] ?: [false];
+        $collection = $this->collectionBuilder();
+        foreach ($aliases as $alias) {
+            $drushAlias = $alias ? escapeshellarg('@' . $alias) : '';
+            $drushCommand = '../vendor/bin/drush ' . $drushAlias;
+            $collection->taskSsh($worker, $auth)
+                ->remoteDirectory($currentWebRoot, true)
+                ->timeout(120)
+                ->exec($drushCommand . ' cr')
+                ->exec($drushCommand . ' cc drush');
 
-        $purge = $this->taskSsh($worker, $auth)
-            ->remoteDirectory($currentWebRoot, true)
-            ->timeout(120)
-            // Check if the drush_purge module is enabled and if an 'everything'
-            // purger is configured.
-            ->exec($this->checkModuleCommand('purge_drush', $remote) . ' && cd -P ' . $currentWebRoot . ' && ../vendor/bin/drush ptyp | grep everything')
-            ->run()
-            ->wasSuccessful();
+            $purge = $this->taskSsh($worker, $auth)
+                ->remoteDirectory($currentWebRoot, true)
+                ->timeout(120)
+                // Check if the drush_purge module is enabled and if an 'everything'
+                // purger is configured.
+                ->exec($this->checkModuleCommand('purge_drush', $remote, $drushAlias) . ' && cd -P ' . $currentWebRoot . ' && ' . $drushCommand . ' ptyp | grep everything')
+                ->run()
+                ->wasSuccessful();
 
-        if ($purge) {
-            $task->exec('../vendor/bin/drush pinv everything -y');
+            if ($purge) {
+                $collection->exec($drushCommand . ' pinv everything -y');
+            }
         }
-
-        return $task;
+        return $collection;
     }
 
     protected function buildTask($archivename = null)
@@ -336,10 +380,11 @@ class RoboFileBase extends AbstractRoboFile
      * the site in maintenance mode before the update and takes in out of
      * maintenance mode after.
      */
-    public function digipolisUpdateDrupal8($opts = ['config-import' => false])
+    public function digipolisUpdateDrupal8($opts = ['config-import' => false, 'alias' => null])
     {
         $this->readProperties();
         $collection = $this->collectionBuilder();
+        $drushAlias = $opts['alias'] ? escapeshellarg('@' . $drushAlias) : '';
 
         $collection
             ->taskExecStack()
@@ -348,13 +393,14 @@ class RoboFileBase extends AbstractRoboFile
 
         $collection
             ->taskDrushStack('vendor/bin/drush')
+            ->siteAlias($drushAlias)
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->drush('cr')
             ->drush('cc drush')
             ->updateDb();
 
         if ($opts['config-import']) {
-            $uuid = $this->getSiteUuid();
+            $uuid = $this->getSiteUuid($opts['alias']);
             if ($uuid) {
                 $collection->drush('cset system.site uuid ' . $uuid);
             }
@@ -364,10 +410,11 @@ class RoboFileBase extends AbstractRoboFile
                 ->drush('cim');
 
             $collection->taskExecStack()
-                ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
-                ->exec($this->varnishCheckCommand());
+                ->exec('ENABLED_MODULES=$(vendor/bin/drush ' . $drushAlias . ' -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
+                ->exec($this->varnishCheckCommand($drushAlias));
 
             $collection->taskDrushStack('vendor/bin/drush')
+                ->siteAlias($drushAlias)
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
         }
 
@@ -377,11 +424,12 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec($this->checkModuleCommand('locale'))
+            ->exec($this->checkModuleCommand('locale', null, $drushAlias))
             ->run()
             ->wasSuccessful();
 
         $collection->taskDrushStack('vendor/bin/drush')
+          ->siteAlias($drushAlias)
           ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
 
         if ($locale) {
@@ -421,12 +469,15 @@ class RoboFileBase extends AbstractRoboFile
             'existing-config' => false,
             'account-name' => 'admin',
             'account-mail' => 'admin@example.com',
-            'account-pass' => null
+            'account-pass' => null,
+            'alias' => null,
         ]
     ) {
         $this->readProperties();
         $app_root = $this->getConfig()->get('digipolis.root.web', false);
-        $site_path = $app_root . '/sites/default';
+        $alias = $opts['alias'] ?: '';
+        $drushAlias = $alias ? escapeshellarg('@' . $alias) : '';
+        $site_path = $app_root . '/sites/' . $alias ?: 'default';
 
         if (is_file($site_path . '/settings.php')) {
             chmod($site_path . '/settings.php', 0664);
@@ -453,6 +504,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection = $this->collectionBuilder();
         $collection->rollback(
             $this->taskDrushStack('vendor/bin/drush')
+                ->siteAlias($drushAlias)
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
                 ->drush('sql-drop')
         );
@@ -471,6 +523,7 @@ class RoboFileBase extends AbstractRoboFile
                 . '/' . $config['database'];
         }
         $drushInstall = $collection->taskDrushStack('vendor/bin/drush')
+            ->siteAlias($drushAlias)
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbUrl($dbUrl)
             ->siteName($opts['site-name'])
@@ -506,12 +559,13 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec($this->checkModuleCommand('locale'))
+            ->exec($this->checkModuleCommand('locale', null, $drushAlias))
             ->run()
             ->wasSuccessful();
 
         if ($locale) {
             $collection->taskDrushStack('vendor/bin/drush')
+                ->siteAlias($drushAlias)
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
                 ->drush('locale-check')
                 ->drush('locale-update');
@@ -519,8 +573,9 @@ class RoboFileBase extends AbstractRoboFile
 
         if ($opts['config-import']) {
             $collection->taskDrushStack('vendor/bin/drush')
+                ->siteAlias($drushAlias)
                 ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
-            $uuid = $this->getSiteUuid();
+            $uuid = $this->getSiteUuid($alias);
             if ($uuid) {
                 $collection->drush('cset system.site uuid ' . $uuid);
             }
@@ -528,18 +583,19 @@ class RoboFileBase extends AbstractRoboFile
                 ->drush('cim');
 
             $collection->taskExecStack()
-                ->exec('ENABLED_MODULES=$(vendor/bin/drush -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
-                ->exec($this->varnishCheckCommand());
+                ->exec('ENABLED_MODULES=$(vendor/bin/drush ' . $drushAlias . ' -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
+                ->exec($this->varnishCheckCommand($drushAlias));
         }
 
         $collection->taskDrushStack('vendor/bin/drush')
+          ->siteAlias($drushAlias)
           ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
           ->drush('sset system.maintenance_mode 0');
 
         return $collection;
     }
 
-    protected function getSiteUuid()
+    protected function getSiteUuid($alias = false)
     {
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
         if (!$webDir) {
@@ -548,12 +604,13 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $finder = new \Symfony\Component\Finder\Finder();
-        $this->say('Searching for settings.php in ' . $webDir . '/sites and subdirectories.');
-        $finder->in($webDir . '/sites')->files()->name('settings.php');
+        $subdir = ($alias ? '/' . $alias : '');
+        $this->say('Searching for settings.php in ' . $webDir . '/sites' . $subdir . ' and subdirectories.');
+        $finder->in($webDir . '/sites' . $subdir)->files()->name('settings.php');
         $config_directories = [];
         foreach ($finder as $settingsFile) {
             $app_root = $webDir;
-            $site_path = 'sites/default';
+            $site_path = 'sites' . $subdir;
             $this->say('Loading settings from ' . $settingsFile->getRealpath() . '.');
             include $settingsFile->getRealpath();
             break;
@@ -574,11 +631,12 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @return string
      */
-    protected function varnishCheckCommand()
+    protected function varnishCheckCommand($drushAlias = '')
     {
         $this->readProperties();
 
         $drushVersion = $this->taskDrushStack()
+            ->siteAlias($drushAlias)
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->getVersion();
         if (version_compare($drushVersion, '9.0', '<')) {
@@ -599,28 +657,29 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @return string
      */
-    protected function checkModuleCommand($module, $remote = null)
+    protected function checkModuleCommand($module, $remote = null, $drushAlias = false)
     {
         $this->readProperties();
 
         $drushVersion = $this->taskDrushStack()
+            ->siteAlias($drushAlias)
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->getVersion();
         $webroot = $remote ? $remote['currentdir'] : $this->getConfig()->get('digipolis.root.web');
         $projectroot = $remote ? $remote['currentdir'] . '/..' : $this->getConfig()->get('digipolis.root.project');
         if (version_compare($drushVersion, '9.0', '<')) {
             return  'cd -P ' . $projectroot . ' && '
-                . 'vendor/bin/drush -r ' . $webroot . ' cr && '
-                . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
-                . 'vendor/bin/drush -r ' . $webroot . ' '
+                . 'vendor/bin/drush ' . $drushAlias . ' -r ' . $webroot . ' cr && '
+                . 'vendor/bin/drush ' . $drushAlias . ' -r ' . $webroot . ' cc drush && '
+                . 'vendor/bin/drush ' . $drushAlias . ' -r ' . $webroot . ' '
                 . 'pml --fields=name --status=enabled --type=module --format=list '
                 . '| grep "(' . $module . ')"';
         }
 
         return 'cd -P ' . $projectroot . ' && '
-            . 'vendor/bin/drush -r ' . $webroot . ' cr && '
-            . 'vendor/bin/drush -r ' . $webroot . ' cc drush && '
-            . 'vendor/bin/drush -r ' . $webroot . ' '
+            . 'vendor/bin/drush ' . $drushAlias . ' -r ' . $webroot . ' cr && '
+            . 'vendor/bin/drush ' . $drushAlias . ' -r ' . $webroot . ' cc drush && '
+            . 'vendor/bin/drush ' . $drushAlias . ' -r ' . $webroot . ' '
             . 'pml --fields=name --status=enabled --type=module --format=list '
             . '| grep "^' . $module . '$"';
     }
@@ -841,6 +900,69 @@ class RoboFileBase extends AbstractRoboFile
     /**
      * {@inheritdoc}
      */
+    protected function backupTask($worker, AbstractAuth $auth, $remote, $opts = array())
+    {
+        $backupDir = $remote['backupsdir'] . '/' . $remote['time'];
+        $currentProjectRoot = $this->getCurrentProjectRoot($worker, $auth, $remote);
+
+        $collection = $this->collectionBuilder();
+        $collection->taskSsh($worker, $auth)
+            ->exec('mkdir -p ' . $backupDir);
+
+        // Overwrite database backups to handle aliases.
+        if ($opts['files'] === $opts['data']) {
+            $parentOpts = ['files' => true, 'data' => false] + $opts;
+            $collection->addTask(parent::backupTask($worker, $auth, $remote, $parentOpts));
+        }
+        if ($opts['data'] || $opts['files'] === $opts['data']) {
+            $aliases = $remote['aliases'] ?: [false];
+            foreach ($aliases as $alias) {
+                $dbBackupFile = $this->backupFileName(($alias ? '.' . $alias : '') . '.sql');
+                $dbBackup = 'vendor/bin/robo digipolis:database-backup ' . ($alias ? escapeshellarg($alias) : '')
+                    . ' --destination=' . $backupDir . '/' . $dbBackupFile;
+                $collection->taskSsh($worker, $auth)
+                    ->remoteDirectory($currentProjectRoot, true)
+                    ->timeout($this->getTimeoutSetting('backup_database'))
+                    ->exec($dbBackup);
+            }
+        }
+        return $collection;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function restoreBackupTask($worker, AbstractAuth $auth, $remote, $opts = array())
+    {
+        $backupDir = $remote['backupsdir'] . '/' . $remote['time'];
+        $currentProjectRoot = $this->getCurrentProjectRoot($worker, $auth, $remote);
+
+        $collection = $this->collectionBuilder();
+
+        // Overwrite database backups to handle aliases.
+        if ($opts['files'] === $opts['data']) {
+            $parentOpts = ['files' => true, 'data' => false] + $opts;
+            $collection->addTask(parent::restoreBackupTask($worker, $auth, $remote, $parentOpts));
+        }
+        if ($opts['data'] || $opts['files'] === $opts['data']) {
+            $aliases = $remote['aliases'] ?: [false];
+            foreach ($aliases as $alias) {
+                $dbBackupFile =  $this->backupFileName(($alias ? '.' . $alias : '') . '.sql.gz', $remote['time']);
+                $dbRestore = 'vendor/bin/robo digipolis:database-restore ' . ($alias ? escapeshellarg($alias) : '')
+                    . '--source=' . $backupDir . '/' . $dbBackupFile;
+                $collection
+                    ->taskSsh($worker, $auth)
+                        ->remoteDirectory($currentProjectRoot, true)
+                        ->timeout($this->getTimeoutSetting('restore_db_backup'))
+                        ->exec($dbRestore);
+            }
+        }
+        return $collection;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function digipolisSyncLocal(
         $host,
         $user,
@@ -872,21 +994,28 @@ class RoboFileBase extends AbstractRoboFile
         if (!$webDir) {
             return false;
         }
+        $this->readProperties();
+        $settings = $this->getConfig()->get('remote');
+        if (!isset($settings['aliases'])) {
+            $settings['aliases'] = $this->parseSiteAliases();
+        }
+        $aliases = $settings['aliases'] ?: [false];
 
-        $finder = new \Symfony\Component\Finder\Finder();
-        $finder->in($webDir . '/sites')->files()->name('settings.php');
-        foreach ($finder as $settingsFile) {
-            $app_root = $webDir;
-            $site_path = 'sites/default';
-            include $settingsFile->getRealpath();
-            break;
-        }
-        if (!isset($databases['default']['default'])) {
-            return false;
-        }
-        $config = $databases['default']['default'];
-        return [
-          'default' => [
+        foreach ($aliases as $alias) {
+            $finder = new \Symfony\Component\Finder\Finder();
+            $subdir = 'sites/' . ($alias ?: 'default');
+            $finder->in($webDir . '/' . $subdir)->files()->name('settings.php');
+            foreach ($finder as $settingsFile) {
+                $app_root = $webDir;
+                $site_path = $subdir;
+                include $settingsFile->getRealpath();
+                break;
+            }
+            if (!isset($databases['default']['default'])) {
+                continue;
+            }
+            $config = $databases['default']['default'];
+            $dbConfig[$alias ?: 'default'] = [
                 'type' => $config['driver'],
                 'host' => $config['host'],
                 'port' => isset($config['port']) ? $config['port'] : '3306',
@@ -907,7 +1036,28 @@ class RoboFileBase extends AbstractRoboFile
                     'sessions',
                     'watchdog',
                 ],
-            ]
-        ];
+            ];
+        }
+        return $dbConfig ?: false;
+    }
+
+    protected function getRemoteSettings($host, $user, $keyFile, $app, $timestamp = null)
+    {
+        $settings = parent::getRemoteSettings($host, $user, $keyFile, $app, $timestamp);
+        // Allow having aliases defined in properties.yml. If non are set, try
+        // parsing them from sites.php
+        if (!isset($settings['aliases'])) {
+            $settings['aliases'] = $this->parseSiteAliases();
+        }
+        return $settings;
+    }
+
+    protected function parseSiteAliases() {
+        $sitesFile = $this->getConfig()->get('digipolis.root.web', false) . '/sites/sites.php';
+        if (!file_exists($sitesFile)) {
+           return false;
+        }
+        include $sitesFile;
+        return isset($sites) && is_array($sites) ? array_values($sites) : false;
     }
 }
