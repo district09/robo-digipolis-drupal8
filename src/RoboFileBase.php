@@ -257,7 +257,7 @@ class RoboFileBase extends AbstractRoboFile
                 ->timeout(120)
                 // Check if the drush_purge module is enabled and if an 'everything'
                 // purger is configured.
-                ->exec($this->checkModuleCommand('purge_drush', $remote, $drushUri) . ' && cd -P ' . $currentWebRoot . ' && ' . $drushCommand . ' ptyp | grep everything')
+                ->exec($this->checkModuleCommand('purge_drush', $remote, $uri) . ' && cd -P ' . $currentWebRoot . ' && ' . $drushCommand . ' ptyp | grep everything')
                 ->run()
                 ->wasSuccessful();
 
@@ -395,9 +395,11 @@ class RoboFileBase extends AbstractRoboFile
                 '/../* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
 
         $collection
-            ->taskDrushStack('vendor/bin/drush')
-            ->uri($drushUri)
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->taskDrushStack('vendor/bin/drush');
+        if ($opts['uri']) {
+            $collection->uri($opts['uri']);
+        }
+        $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->drush('cr')
             ->drush('cc drush')
             ->updateDb();
@@ -414,11 +416,13 @@ class RoboFileBase extends AbstractRoboFile
 
             $collection->taskExecStack()
                 ->exec('ENABLED_MODULES=$(vendor/bin/drush ' . $drushUriParam . ' -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
-                ->exec($this->varnishCheckCommand($drushUri));
+                ->exec($this->varnishCheckCommand($opts['uri']));
 
-            $collection->taskDrushStack('vendor/bin/drush')
-                ->uri($drushUri)
-                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+            $collection->taskDrushStack('vendor/bin/drush');
+            if ($opts['uri']) {
+                $collection->uri($opts['uri']);
+            }
+            $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
         }
 
         $collection
@@ -427,13 +431,15 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec($this->checkModuleCommand('locale', null, $drushUris))
+            ->exec($this->checkModuleCommand('locale', null, $opts['uri']))
             ->run()
             ->wasSuccessful();
 
-        $collection->taskDrushStack('vendor/bin/drush')
-          ->uri($drushUri)
-          ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+        $collection->taskDrushStack('vendor/bin/drush');
+        if ($opts['uri']) {
+            $collection->uri($opts['uri']);
+        }
+        $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
 
         if ($locale) {
             $collection
@@ -507,12 +513,14 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection = $this->collectionBuilder();
-        $collection->rollback(
-            $this->taskDrushStack('vendor/bin/drush')
-                ->uri($drushUri)
-                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-                ->drush('sql-drop')
-        );
+        $drop = $this->taskDrushStack('vendor/bin/drush');
+        if ($uri) {
+            $drop->uri($uri);
+        }
+        $drop->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->drush('sql-drop');
+
+        $collection->rollback($drop);
         $dbUrl = false;
         if ($config['driver'] === 'sqlite') {
             $dbUrl = $config['driver'] . '://' . $config['database'];
@@ -527,9 +535,11 @@ class RoboFileBase extends AbstractRoboFile
                 )
                 . '/' . $config['database'];
         }
-        $drushInstall = $collection->taskDrushStack('vendor/bin/drush')
-            ->uri($drushUri)
-            ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+        $drushInstall = $collection->taskDrushStack('vendor/bin/drush');
+        if ($uri) {
+            $drushInstall->uri($uri);
+        }
+        $drushInstall->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->dbUrl($dbUrl)
             ->siteName($opts['site-name'])
             ->accountName($opts['account-name'])
@@ -564,22 +574,26 @@ class RoboFileBase extends AbstractRoboFile
 
         $locale = $this->taskExecStack()
             ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec($this->checkModuleCommand('locale', null, $drushUri))
+            ->exec($this->checkModuleCommand('locale', null, $uri))
             ->run()
             ->wasSuccessful();
 
         if ($locale) {
-            $collection->taskDrushStack('vendor/bin/drush')
-                ->uri($drushUri)
-                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            $collection->taskDrushStack('vendor/bin/drush');
+            if ($uri) {
+                $collection->uri($uri);
+            }
+            $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
                 ->drush('locale-check')
                 ->drush('locale-update');
         }
 
         if ($opts['config-import']) {
-            $collection->taskDrushStack('vendor/bin/drush')
-                ->uri($drushUri)
-                ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+            $collection->taskDrushStack('vendor/bin/drush');
+            if ($uri) {
+                $collection->uri($uri);
+            }
+            $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
             $uuid = $this->getSiteUuid($uri);
             if ($uuid) {
                 $collection->drush('cset system.site uuid ' . $uuid);
@@ -589,13 +603,15 @@ class RoboFileBase extends AbstractRoboFile
 
             $collection->taskExecStack()
                 ->exec('ENABLED_MODULES=$(vendor/bin/drush ' . $drushUriParam . ' -r ' . $this->getConfig()->get('digipolis.root.web') . ' pml --fields=name --status=enabled --type=module --format=list)')
-                ->exec($this->varnishCheckCommand($drushUri));
+                ->exec($this->varnishCheckCommand($uri));
         }
 
-        $collection->taskDrushStack('vendor/bin/drush')
-          ->uri($drushUri)
-          ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-          ->drush('sset system.maintenance_mode 0');
+        $collection->taskDrushStack('vendor/bin/drush');
+        if ($uri) {
+            $collection->uri($uri);
+        }
+        $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+            ->drush('sset system.maintenance_mode 0');
 
         return $collection;
     }
@@ -636,14 +652,14 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @return string
      */
-    protected function varnishCheckCommand($drushUri = '')
+    protected function varnishCheckCommand($uri = '')
     {
         $this->readProperties();
 
         $drushVersion = $this->taskDrushStack()
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
-        if ($drushUri) {
-            $drushVersion->uri($drushUri);
+        if ($uri) {
+            $drushVersion->uri($uri);
         }
         $drushVersion->getVersion();
         if (version_compare($drushVersion, '9.0', '<')) {
@@ -664,15 +680,15 @@ class RoboFileBase extends AbstractRoboFile
      *
      * @return string
      */
-    protected function checkModuleCommand($module, $remote = null, $drushUri = false)
+    protected function checkModuleCommand($module, $remote = null, $uri = false)
     {
         $this->readProperties();
 
         $drushVersion = $this->taskDrushStack();
         $drushUriParam = '';
-        if ($drushUri) {
-          $drushVersion->uri($drushUri);
-          $drushUriParam = '--uri=' . $drushUri;
+        if ($uri) {
+          $drushVersion->uri($uri);
+          $drushUriParam = '--uri=' . escapeshellarg($uri);
         }
         $drushVersion = $drushVersion->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->getVersion();
