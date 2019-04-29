@@ -661,7 +661,7 @@ class RoboFileBase extends AbstractRoboFile
         if ($uri) {
             $drushVersion->uri($uri);
         }
-        $drushVersion->getVersion();
+        $drushVersion = $drushVersion->getVersion();
         if (version_compare($drushVersion, '9.0', '<')) {
             return 'bash -c "[[ '
                 . '\'$ENABLED_MODULES\' =~ \((varnish|purge)\) '
