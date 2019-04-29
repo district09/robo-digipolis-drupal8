@@ -194,7 +194,7 @@ class RoboFileBase extends AbstractRoboFile
                   . ($force ? ' --force' : '' )
                   . ($extra['config-import'] ? ' --config-import' : '')
                   . ($extra['existing-config'] ? ' --existing-config' : '')
-                  . ($alias ? '--alias=' . escapeshellarg($alias) : '');
+                  . ($alias ? ' --alias=' . escapeshellarg($alias) : '');
 
             if (!$force) {
                 if (!$alias && $this->siteInstalledTested) {
