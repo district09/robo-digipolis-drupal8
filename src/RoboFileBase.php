@@ -674,7 +674,7 @@ class RoboFileBase extends AbstractRoboFile
           $drushVersion->uri($drushUri);
           $drushUriParam = '--uri=' . $drushUri;
         }
-        $drushVersion->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+        $drushVersion = $drushVersion->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
             ->getVersion();
         $webroot = $remote ? $remote['currentdir'] : $this->getConfig()->get('digipolis.root.web');
         $projectroot = $remote ? $remote['currentdir'] . '/..' : $this->getConfig()->get('digipolis.root.project');
