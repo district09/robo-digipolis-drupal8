@@ -407,7 +407,7 @@ class RoboFileBase extends AbstractRoboFile
         if ($opts['config-import']) {
             $uuid = $this->getSiteUuid($opts['uri']);
             if ($uuid) {
-                $collection->drush($drushUriParam . ' cset system.site uuid ' . $uuid);
+                $collection->drush('cset system.site uuid ' . $uuid);
             }
             $collection
                 ->drush('cr')
