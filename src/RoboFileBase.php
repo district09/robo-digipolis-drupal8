@@ -212,6 +212,7 @@ class RoboFileBase extends AbstractRoboFile
                 ->verbose($extra['ssh-verbose'])
                 ->exec($install);
         }
+        return $collection;
     }
 
     protected function updateTask($worker, AbstractAuth $auth, $remote, $extra = [])
