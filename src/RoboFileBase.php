@@ -67,6 +67,8 @@ class RoboFileBase extends AbstractRoboFile
                 ->exec('../vendor/bin/drush ' . ($alias ? '--uri=' . escapeshellarg($uri) : '') . ' sql-query "SHOW TABLES" | wc --lines', function ($output) use (&$count) {
                     $count = (int) $output;
                 })
+                ->exec('[[ -f ' . escapeshellarg($currentWebRoot . '/sites/' . ($alias ?: 'default') . '/settings.php') . ' ]] || exit 1')
+                ->stopOnFail()
                 ->timeout(300)
                 ->run();
             $this->setSiteInstalled($result->wasSuccessful() && $count > 10, $uri);
@@ -948,7 +950,8 @@ class RoboFileBase extends AbstractRoboFile
                 $dbBackup = 'vendor/bin/robo digipolis:database-backup ' . ($alias ? escapeshellarg($alias) : '')
                     . ' --destination=' . $backupDir . '/' . $dbBackupFile;
                 if ($alias) {
-                    $dbBackup = '[[ -d '. escapeshellarg($remote['webdir'] . '/sites/' . $alias) . ' ]] && ' . $dbBackup;
+                    $currentWebRoot = $remote['currentdir'];
+                    $dbBackup = '[[ ! -f ' . escapeshellarg($currentWebRoot . '/sites/' . $alias . '/settings.php') . ' ]] || ' . $dbBackup;
                 }
                 $collection->taskSsh($worker, $auth)
                     ->remoteDirectory($currentProjectRoot, true)
