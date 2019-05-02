@@ -947,6 +947,9 @@ class RoboFileBase extends AbstractRoboFile
                 $dbBackupFile = $this->backupFileName(($alias ? '.' . $alias : '') . '.sql');
                 $dbBackup = 'vendor/bin/robo digipolis:database-backup ' . ($alias ? escapeshellarg($alias) : '')
                     . ' --destination=' . $backupDir . '/' . $dbBackupFile;
+                if ($alias) {
+                    $dbBackup = '[[ -d '. escapeshellarg($remote['webdir'] . '/sites/' . $alias) . ' ]] && ' . $dbBackup;
+                }
                 $collection->taskSsh($worker, $auth)
                     ->remoteDirectory($currentProjectRoot, true)
                     ->timeout($this->getTimeoutSetting('backup_database'))
