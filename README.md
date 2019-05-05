@@ -144,3 +144,28 @@ installation). The site that was newly added will go through the installation
 process, the sites that already existed will be left alone. This means you can't
 update one subsite, while adding another at the same time. You'll have to do
 that in two separate deploys.
+
+## Installing from an existing database
+
+This goes for both 'normal' and multisite installations. If for some reason you
+would like to create a new site starting from an existing (meaning non-emtpy)
+database (not recommended), you can. Just fill your database with the data you
+need and trigger the deploy. The deploy will detect there is no site yet (since
+there will be no code on your server) and trigger the install script. Once your
+code is uploaded to your server, the install script will be able to connect to
+the database. It will then detect there's allready data in it, and skip the
+install process. This way your code is uploaded to your server and it will use
+the existing database. If your database is behind on you code (meaning you'll
+need to trigger database updates), you'll have to execute a second deploy.
+
+This is also the reason, that when adding a new site to your multisite
+installation, the existing ones will be left alone. We would have had to
+overwrite the entire base package (robo-digipolis-helpers) to detect which site
+of the multisite is a new one and which one is an existing one that might need
+an update. So instead, when the deploy script detects that at least one site of
+the multisite installation needs an install from scratch, the install script is
+triggered for all sites of the multisite installation. If then the install
+script runs for one of the existing sites, it'll detect the existing data in its
+database and leave it at that. For the newly added site there'll be no data
+(unless you manually entered it in the database) and it will trigger the
+installation for that specific site.
