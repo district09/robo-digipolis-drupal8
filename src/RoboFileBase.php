@@ -224,10 +224,10 @@ class RoboFileBase extends AbstractRoboFile
         $update = 'vendor/bin/robo digipolis:update-drupal8';
         $update .= $extra['config-import'] ? ' --config-import' : '';
         $aliases = $remote['aliases'] ?: [0 => false];
+        $collection = $this->collectionBuilder();
 
         foreach ($aliases as $uri => $alias) {
             $aliasUpdate = $update . ($alias ? ' --uri=' . escapeshellarg($uri) : '');
-            $collection = $this->collectionBuilder();
             $collection
                 ->taskSsh($worker, $auth)
                     ->remoteDirectory($currentProjectRoot, true)
@@ -1077,20 +1077,22 @@ class RoboFileBase extends AbstractRoboFile
     protected function getRemoteSettings($host, $user, $keyFile, $app, $timestamp = null)
     {
         $settings = parent::getRemoteSettings($host, $user, $keyFile, $app, $timestamp);
-        // Allow having aliases defined in properties.yml. If non are set, try
-        // parsing them from sites.php
-        if (!isset($settings['aliases'])) {
-            $settings['aliases'] = $this->parseSiteAliases();
-        }
+        $settings['aliases'] = $this->parseSiteAliases();
+
         return $settings;
     }
 
     protected function parseSiteAliases() {
+        // Allow having aliases defined in properties.yml. If non are set, try
+        // parsing them from sites.php
+        $this->readProperties();
+        $remote = $this->getConfig()->get('remote');
+        $aliases = isset($remote['aliases']) ? $remote['aliases'] : [];
         $sitesFile = $this->getConfig()->get('digipolis.root.web', false) . '/sites/sites.php';
         if (!file_exists($sitesFile)) {
-           return false;
+           return $aliases;
         }
         include $sitesFile;
-        return isset($sites) && is_array($sites) ? $sites : false;
+        return isset($sites) && is_array($sites) ? ($aliases + $sites) : $aliases;
     }
 }
