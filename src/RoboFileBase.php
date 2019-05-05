@@ -394,7 +394,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection
             ->taskExecStack()
             ->exec('cd -P $(ls -vdr ' . $this->getConfig()->get('digipolis.root.project') .
-                '/../* | head -n2 | tail -n1) && vendor/bin/drush sset system.maintenance_mode 1');
+                '/../* | head -n2 | tail -n1) && vendor/bin/drush ' . $drushUriParam . ' sset system.maintenance_mode 1');
 
         $collection
             ->taskDrushStack('vendor/bin/drush');
