@@ -515,14 +515,18 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         $collection = $this->collectionBuilder();
-        $drop = $this->taskDrushStack('vendor/bin/drush');
-        if ($uri) {
-            $drop->uri($uri);
-        }
-        $drop->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-            ->drush('sql-drop');
+        // Installations can start with existing databases. Don't drop them if
+        // they did.
+        if (!$this->taskExec('[[ $(vendor/bin/drush --uri=' . $drushUri . ' sql-query "SHOW TABLES" | wc --lines) -gt 10 ]]')->run()->wasSuccessful()) {
+            $drop = $this->taskDrushStack('vendor/bin/drush');
+            if ($uri) {
+                $drop->uri($uri);
+            }
+            $drop->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
+                ->drush('sql-drop');
 
-        $collection->rollback($drop);
+            $collection->rollback($drop);
+        }
         $dbUrl = false;
         if ($config['driver'] === 'sqlite') {
             $dbUrl = $config['driver'] . '://' . $config['database'];
