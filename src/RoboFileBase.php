@@ -982,7 +982,7 @@ class RoboFileBase extends AbstractRoboFile
             foreach ($aliases as $uri => $alias) {
                 $dbBackupFile =  $this->backupFileName(($alias ? '.' . $alias : '') . '.sql.gz', $remote['time']);
                 $dbRestore = 'vendor/bin/robo digipolis:database-restore ' . ($alias ? escapeshellarg($alias) : '')
-                    . '--source=' . $backupDir . '/' . $dbBackupFile;
+                    . ' --source=' . $backupDir . '/' . $dbBackupFile;
                 $collection
                     ->taskSsh($worker, $auth)
                         ->remoteDirectory($currentProjectRoot, true)
