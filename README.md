@@ -169,3 +169,8 @@ script runs for one of the existing sites, it'll detect the existing data in its
 database and leave it at that. For the newly added site there'll be no data
 (unless you manually entered it in the database) and it will trigger the
 installation for that specific site.
+
+## General gotchas
+
+We assume the value of `$config_directories['sync']` is relative to the web
+root. We prepend it with the path to the web root ourselves.
