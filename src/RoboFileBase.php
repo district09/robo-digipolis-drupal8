@@ -61,17 +61,14 @@ class RoboFileBase extends AbstractRoboFile
         $aliases = $remote['aliases'] ?: [0 => false];
         foreach ($aliases as $uri => $alias) {
             $currentWebRoot = $remote['currentdir'];
-            $installed = false;
             $result = $this->taskSsh($worker, $auth)
                 ->remoteDirectory($currentWebRoot, true)
-                ->exec('../vendor/bin/drush ' . ($alias ? '--uri=' . escapeshellarg($uri) : '') . ' sql-query "SHOW TABLES" | grep users | wc --lines', function ($output) use (&$installed) {
-                    $installed = (boolean) $output;
-                })
+                ->exec('../vendor/bin/drush ' . ($alias ? '--uri=' . escapeshellarg($uri) : '') . ' sql-query "SHOW TABLES" | grep users')
                 ->exec('[[ -f ' . escapeshellarg($currentWebRoot . '/sites/' . ($alias ?: 'default') . '/settings.php') . ' ]] || exit 1')
                 ->stopOnFail()
                 ->timeout(300)
                 ->run();
-            $this->setSiteInstalled($result->wasSuccessful() && $installed, $uri);
+            $this->setSiteInstalled($result->wasSuccessful(), $uri);
             if ($alias === false) {
                 $this->siteInstalledTested = true;
             }
