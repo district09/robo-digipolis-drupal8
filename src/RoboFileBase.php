@@ -61,17 +61,14 @@ class RoboFileBase extends AbstractRoboFile
         $aliases = $remote['aliases'] ?: [0 => false];
         foreach ($aliases as $uri => $alias) {
             $currentWebRoot = $remote['currentdir'];
-            $count = 0;
             $result = $this->taskSsh($worker, $auth)
                 ->remoteDirectory($currentWebRoot, true)
-                ->exec('../vendor/bin/drush ' . ($alias ? '--uri=' . escapeshellarg($uri) : '') . ' sql-query "SHOW TABLES" | wc --lines', function ($output) use (&$count) {
-                    $count = (int) $output;
-                })
+                ->exec($this->usersTableCheckCommand('../vendor/bin/drush', $uri))
                 ->exec('[[ -f ' . escapeshellarg($currentWebRoot . '/sites/' . ($alias ?: 'default') . '/settings.php') . ' ]] || exit 1')
                 ->stopOnFail()
                 ->timeout(300)
                 ->run();
-            $this->setSiteInstalled($result->wasSuccessful() && $count > 10, $uri);
+            $this->setSiteInstalled($result->wasSuccessful(), $uri);
             if ($alias === false) {
                 $this->siteInstalledTested = true;
             }
@@ -200,10 +197,10 @@ class RoboFileBase extends AbstractRoboFile
 
             if (!$force) {
                 if (!$alias && $this->siteInstalledTested) {
-                    $install = '[[ $(vendor/bin/drush sql-query "SHOW TABLES" | wc --lines) -gt 10 ]] || ' . $install;
+                    $install = '[[ $(' . $this->usersTableCheckCommand('vendor/bin/drush') . ') ]] || ' . $install;
                 }
                 elseif ($alias && is_array($this->siteInstalledTested) && isset($this->siteInstalledTested[$alias]) && $this->siteInstalledTested[$alias]) {
-                    $install = '[[ $(vendor/bin/drush --uri=' . escapeshellarg($uri) . ' sql-query "SHOW TABLES" | wc --lines) -gt 10 ]] || ' . $install;
+                    $install = '[[ $(' . $this->usersTableCheckCommand('vendor/bin/drush', $uri) . ') ]] || ' . $install;
                 }
             }
 
@@ -517,7 +514,7 @@ class RoboFileBase extends AbstractRoboFile
         $collection = $this->collectionBuilder();
         // Installations can start with existing databases. Don't drop them if
         // they did.
-        if (!$this->taskExec('[[ $(vendor/bin/drush --uri=' . $drushUri . ' sql-query "SHOW TABLES" | wc --lines) -gt 10 ]]')->run()->wasSuccessful()) {
+        if (!$this->taskExec('[[ $(' . $this->usersTableCheckCommand('vendor/bin/drush', $uri) . ') ]]')->run()->wasSuccessful()) {
             $drop = $this->taskDrushStack('vendor/bin/drush');
             if ($uri) {
                 $drop->uri($uri);
@@ -678,6 +675,23 @@ class RoboFileBase extends AbstractRoboFile
             . '\'$ENABLED_MODULES\' =~ (varnish|purge) '
             . '&& \'$ENABLED_MODULES\' =~ page_cache'
             . ' ]]" && exit 1 || :';
+    }
+
+    /**
+     * Get the command to check if the users table exists.
+     *
+     * @param string $drush
+     *   Path to the drush executable.
+     * @param string $uri
+     *   The uri (used for multisite installations, optional).
+     *
+     * @return string
+     */
+    protected function usersTableCheckCommand($drush, $uri = '')
+    {
+        return $drush
+            . ' ' . ($uri ? '--uri=' . escapeshellarg($uri) : '')
+            . ' sql-query "SHOW TABLES" | grep users';
     }
 
     /**
@@ -1097,6 +1111,24 @@ class RoboFileBase extends AbstractRoboFile
            return $aliases;
         }
         include $sitesFile;
-        return isset($sites) && is_array($sites) ? ($aliases + $sites) : $aliases;
+        $aliases = isset($sites) && is_array($sites) ? ($aliases + $sites) : $aliases;
+        /**
+         * Multiple aliases can map to the same folder. We don't want to execute
+         * every action for the same folder twice. For consistency, we use the
+         * url of the first occurrence of the folder name. Since array_unique()
+         * sorts the array before filtering it, we can't use that. Using the
+         * array_flip() function, a value has several occurrences, the latest
+         * key will be used as its value, and all others will be lost. So to get
+         * the first occurence, we reverse the array, flip it twice, and reverse
+         * it again, so we have a unique array in the order we expect it to be.
+         */
+        return array_reverse(
+            array_flip(
+                array_flip(
+                    array_reverse($aliases, true)
+                )
+            ),
+            true
+        );
     }
 }
