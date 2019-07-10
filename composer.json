@@ -7,7 +7,7 @@
     "require": {
         "boedah/robo-drush": "^4.2.0",
         "digipolisgent/robo-digipolis-code-validation": "^0.1.1",
-        "digipolisgent/robo-digipolis-helpers": "dev-feature/refactor",
+        "digipolisgent/robo-digipolis-helpers": "^1.0@alpha",
         "digipolisgent/robo-digipolis-package-drupal8": "^0.1",
         "drupal/coder": "^8.2",
         "drush/drush": "^9.3",
