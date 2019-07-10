@@ -172,5 +172,7 @@ installation for that specific site.
 
 ## General gotchas
 
-We assume the value of `$config_directories['sync']` is relative to the web
+- We assume the value of `$config_directories['sync']` is relative to the web
 root. We prepend it with the path to the web root ourselves.
+- If multiple aliases point to the same folder, we only use the first alias in
+the array. Keep this in mind for e.g. your sitemap.
