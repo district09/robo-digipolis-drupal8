@@ -17,5 +17,8 @@ remote:
   cleandir_limit: 2
   postsymlink_filechecks:
     - '${remote.rootdir}/vendor/autoload.php'
+  environment_overrides:
+    ^staging:
+      cleandir_limit: 1
 local:
   filesdir: '[web_root]/sites/default'
