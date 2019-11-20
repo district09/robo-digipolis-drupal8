@@ -327,6 +327,7 @@ class RoboFileBase extends AbstractRoboFile
                         ->onSuccess(
                             (clone $drushCommand)
                                 ->addArgument('ptyp')
+                                ->addOption('format', 'list')
                         )
                         ->pipeOutputTo('grep')
                             ->addArgument('everything')
