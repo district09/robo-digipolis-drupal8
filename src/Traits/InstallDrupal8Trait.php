@@ -206,6 +206,7 @@ trait InstallDrupal8Trait
         foreach ($aliases as $uri => $alias) {
             $install = CommandBuilder::create('vendor/bin/robo')
                 ->addArgument('digipolis:install-drupal8')
+                ->addArgument($extra['profile'])
                 ->addOption('site-name', $extra['site-name']);
             if ($force) {
                 $install->addOption('force');
