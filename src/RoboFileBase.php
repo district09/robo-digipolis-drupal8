@@ -237,6 +237,10 @@ class RoboFileBase extends AbstractRoboFile
         if ($opts['data'] || $opts['files'] === $opts['data']) {
             $aliases = $remote['aliases'] ?: [0 => false];
             foreach ($aliases as $uri => $alias) {
+                $preRestoreBackup = $this->preRestoreBackupTask($worker, $auth, $remote, ['data' => true, 'files' => false]);
+                if ($preRestoreBackup) {
+                    $collection->addTask($preRestoreBackup);
+                }
                 $dbBackupFile =  $this->backupFileName(($alias ? '.' . $alias : '') . '.sql.gz', $remote['time']);
                 $dbRestore = CommandBuilder::create('vendor/bin/robo')->addArgument('digipolis:database-restore')->addOption('source', $backupDir . '/' . $dbBackupFile);
                 if ($alias) {
