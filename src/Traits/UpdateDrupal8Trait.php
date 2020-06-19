@@ -25,6 +25,7 @@ trait UpdateDrupal8Trait {
      */
     public function digipolisUpdateDrupal8($opts = ['config-import' => false, 'uri' => null])
     {
+        $opts += ['config-import' => false, 'uri' => null];
         $this->readProperties();
         $collection = $this->collectionBuilder();
         $enableMaintenanceMode = CommandBuilder::create('cd')
