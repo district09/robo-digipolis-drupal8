@@ -168,7 +168,7 @@ class RoboFileBase extends AbstractRoboFile
                     ->addArgument('sql-drop')
                     ->addFlag('y');
                 if ($alias) {
-                    $drop->addOption($uri);
+                    $drop->addOption('uri', $uri);
                 }
                 $collection
                     ->taskSsh($worker, $auth)
