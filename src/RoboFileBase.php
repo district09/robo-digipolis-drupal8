@@ -11,7 +11,6 @@ class RoboFileBase extends AbstractRoboFile
 {
     use \Boedah\Robo\Task\Drush\loadTasks;
     use \DigipolisGent\Robo\Task\Package\Drupal8\loadTasks;
-    use \DigipolisGent\Robo\Task\CodeValidation\loadTasks;
     use \DigipolisGent\Robo\Helpers\Traits\AbstractCommandTrait;
     use \DigipolisGent\Robo\Task\Deploy\Commands\loadCommands;
     use Traits\BuildDrupal8Trait;
@@ -67,78 +66,6 @@ class RoboFileBase extends AbstractRoboFile
         }
 
         return $remote['aliases'] ? count(array_filter($this->siteInstalled)) === count($this->siteInstalled) : $this->siteInstalled;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function digipolisValidateCode()
-    {
-        $local = $this->getLocalSettings();
-        $phpmdExtensions = [
-            'php',
-            'module',
-            'install',
-            'profile',
-            'theme',
-        ];
-        $phpcsExtensions = [
-            'php',
-            'module',
-            'install',
-            'profile',
-            'theme',
-            'js',
-            'yml',
-        ];
-        // Directories and files to check.
-        $directories = [
-            $local['project_root'] . '/web/modules/custom',
-            $local['project_root'] . '/web/profiles/custom',
-            $local['project_root'] . '/web/themes/custom',
-        ];
-
-        // Check if directories exist.
-        $checks = [];
-        foreach ($directories as $dir) {
-            if (!file_exists($dir)) {
-                continue;
-            }
-
-            $checks[] = $dir;
-        }
-        if (!$checks) {
-            $this->say('! No custom directories to run checks on.');
-            return;
-        }
-        $phpcs = $this
-            ->taskPhpCs(
-                implode(' ', $checks),
-                $local['project_root'] . '/vendor/drupal/coder/coder_sniffer/Drupal',
-                $phpcsExtensions
-            )
-            ->ignore([
-                'libraries',
-                'node_modules',
-                'Gruntfile.js',
-                '*.md',
-                '*.min.js',
-                '*.css'
-            ])
-            ->reportType('checkstyle')
-            ->reportFile('validation/phpcs.checkstyle.xml')
-            ->failOnViolations(false);
-        $phpmd = $this->taskPhpMd(
-            implode(',', $checks),
-            'xml',
-            $phpmdExtensions
-        )
-        ->reportFile('validation/phpmd.xml')
-        ->failOnViolations(false);
-        $collection = $this->collectionBuilder();
-        $collection->addTask($phpmd);
-        $collection->addTask($phpcs);
-        return $collection;
     }
 
     /**
