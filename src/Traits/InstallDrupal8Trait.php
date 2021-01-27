@@ -142,21 +142,23 @@ trait InstallDrupal8Trait
             ->chmod($site_path . '/settings.php', 0444)
             ->chmod($site_path, 0555);
 
-        $locale = $this->taskExecStack()
-            ->dir($this->getConfig()->get('digipolis.root.project'))
-            ->exec((string) $this->checkModuleCommand('locale', null, $uri))
-            ->run()
-            ->wasSuccessful();
-
-        if ($locale) {
-            $collection->taskDrushStack('vendor/bin/drush');
-            if ($uri) {
-                $collection->uri($uri);
-            }
-            $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'))
-                ->drush('locale-check')
-                ->drush('locale-update');
+        // Translation updates if locale module is enabled.
+        $drushBase = CommandBuilder::create('vendor/bin/drush');
+        if ($uri) {
+            $drushBase->addOption('uri', $uri);
         }
+        $drushBase->addFlag('r', $this->getConfig()->get('digipolis.root.web'));
+
+        $localeUpdate = $this->checkModuleCommand('locale', null, $uri)
+            ->onSuccess((clone $drushBase)->addArgument('locale-check'))
+            ->onSuccess((clone $drushBase)->addArgument('locale-update'));
+
+        // Allow this command to fail if the locale module is not present.
+        $localeUpdate = CommandBuilder::create($localeUpdate)
+            ->onFailure('echo')
+            ->addArgument("Locale module not found, translations will not be imported.");
+
+        $collection->taskExec((string) $localeUpdate);
 
         if ($opts['config-import']) {
             $collection->taskDrushStack('vendor/bin/drush');
