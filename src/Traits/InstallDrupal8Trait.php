@@ -158,6 +158,7 @@ trait InstallDrupal8Trait
             ->onFailure('echo')
             ->addArgument("Locale module not found, translations will not be imported.");
 
+        $collection->taskExec((string) $localeUpdate);
 
         if ($opts['config-import']) {
             $collection->taskDrushStack('vendor/bin/drush');

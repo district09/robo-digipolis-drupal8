@@ -119,7 +119,7 @@ trait UpdateDrupal8Trait {
             ->onFailure('echo')
             ->addArgument("Locale module not found, translations will not be imported.");
 
-        $collection->taskExec($localeUpdate);
+        $collection->taskExec((string) $localeUpdate);
 
         $collection->taskDrushStack('vendor/bin/drush');
 
