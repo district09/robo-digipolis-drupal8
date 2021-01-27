@@ -100,8 +100,8 @@ trait Drupal8UtilsTrait
     }
 
     /**
-     * Get the command to check if the locale module is enabled. Command differs
-     * for Drush 9 vs Drush 8.
+     * Get the command to check if a module is enabled. Command differs for
+     * Drush 9 vs Drush 8.
      *
      * @return string
      */
