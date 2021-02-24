@@ -5,14 +5,14 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "digipolisgent/robo-digipolis-helpers": "^1.0",
+        "digipolisgent/robo-digipolis-helpers": "^2.0",
         "digipolisgent/robo-digipolis-package-drupal8": "^0.1",
         "digipolisgent/robo-drush": "^4.2.2",
         "ircmaxell/random-lib": "^1.2"
     },
     "require-dev": {
-        "phpunit/phpunit": "~4.4",
-        "drupal/coder": "^8.3"
+        "drupal/coder": "^8.3",
+        "phpunit/phpunit": "^5.0"
     },
     "autoload": {
         "psr-4": {
