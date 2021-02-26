@@ -335,6 +335,7 @@ class RoboFileBase extends AbstractRoboFile
                     'sessions',
                     'watchdog',
                 ],
+                'extra' => '--skip-add-locks --no-tablespaces',
             ];
         }
         return $dbConfig ?: false;
