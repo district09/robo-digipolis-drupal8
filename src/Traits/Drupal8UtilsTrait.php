@@ -146,11 +146,11 @@ trait Drupal8UtilsTrait
         $this->siteInstalledTested[$uri] = false;
     }
 
-    protected function parseSiteAliases() {
+    protected function parseSiteAliases($remote = null) {
         // Allow having aliases defined in properties.yml. If non are set, try
         // parsing them from sites.php
         $this->readProperties();
-        $remote = $this->getConfig()->get('remote');
+        $remote = $remote ?? $this->getConfig()->get('remote');
         $aliases = isset($remote['aliases']) ? $remote['aliases'] : [];
         $sitesFile = $this->getConfig()->get('digipolis.root.web', false) . '/sites/sites.php';
         if (!file_exists($sitesFile)) {
