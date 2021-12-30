@@ -279,7 +279,7 @@ class RoboFileBase extends AbstractRoboFile
     protected function getRemoteSettings($host, $user, $keyFile, $app, $timestamp = null)
     {
         $settings = parent::getRemoteSettings($host, $user, $keyFile, $app, $timestamp);
-        $settings['aliases'] = $this->parseSiteAliases();
+        $settings['aliases'] = $this->parseSiteAliases($settings);
 
         return $settings;
     }
