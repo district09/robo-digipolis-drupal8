@@ -22,12 +22,13 @@ class Build extends BuildBase
      */
     public function buildTask($archivename = null)
     {
-        $task = parent::buildTask($archivename);
+        $this->propertiesHelper->readProperties();
+        $archive = is_null($archivename) ? $this->remoteHelper->getTime() . '.tar.gz' : $archivename;
         $collection = $this->collectionBuilder();
         $collection
             ->taskThemesCompileDrupal8()
             ->taskThemesCleanDrupal8()
-            ->addTask($task);
+            ->taskPackageDrupal8($archive);
         return $collection;
     }
 }
