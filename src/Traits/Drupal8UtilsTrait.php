@@ -18,7 +18,7 @@ trait Drupal8UtilsTrait
         }
 
         $finder = new Finder();
-        $subdir = ($uri ? '/' . $this->parseSiteAliases()[$uri] : '');
+        $subdir = ($uri ? '/' . $this->remoteHelper->parseSiteAliases()[$uri] : '');
         $this->say('Searching for settings.php in ' . $webDir . '/sites' . $subdir . ' and subdirectories.');
         $finder->in($webDir . '/sites' . $subdir)->files()->name('settings.php');
         $config_directories = [];
