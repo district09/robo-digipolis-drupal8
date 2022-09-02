@@ -378,7 +378,7 @@ class DigipolisDrupal8Commands extends DigipolisHelpersCommands implements
         $collection = $this->collectionBuilder();
         // Installations can start with existing databases. Don't drop them if
         // they did.
-        if (!$this->taskExec('[[ $(' . $this->usersTableCheckCommand('vendor/bin/drush', $uri) . ') ]]')->run()->wasSuccessful()) {
+        if (!$this->taskExec('[[ $(' . $this->appTaskFactory->usersTableCheckCommand('vendor/bin/drush', $uri) . ') ]]')->run()->wasSuccessful()) {
             $drop = $this->taskDrushStack('vendor/bin/drush');
             if ($uri) {
                 $drop->uri($uri);
