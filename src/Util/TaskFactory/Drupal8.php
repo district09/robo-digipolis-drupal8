@@ -263,7 +263,14 @@ class Drupal8 extends AbstractApp implements PropertiesHelperAwareInterface, Rem
                 ->wasSuccessful();
 
             if ($purge) {
-                $collection->exec((string) (clone $drushCommand)->addArgument('pinv')->addArgument('everything')->addFlag('y'));
+                $collection->exec(
+                    (string) (clone $drushCommand)
+                        ->addArgument('pinv')
+                        ->addArgument('everything')
+                        ->addFlag('y')
+                        // This one is allowed to fail.
+                        ->onFailure(CommandBuilder::create('exit')->addRawArgument(0))
+                );
             }
         }
         return $collection;
