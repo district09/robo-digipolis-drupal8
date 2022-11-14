@@ -2,7 +2,6 @@
 
 namespace DigipolisGent\Robo\Drupal8\Traits;
 
-use Boedah\Robo\Task\Drush\loadTasks as DrushLoadTasks;
 use DigipolisGent\CommandBuilder\CommandBuilder;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
@@ -48,7 +47,7 @@ trait Drupal8UtilsTrait
      */
     public function varnishCheckCommand($uri = '')
     {
-        $this->propertiesHelper->readProperties();
+        $this->readProperties();
 
         $drushVersion = $this->taskDrushStack()
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
@@ -95,7 +94,7 @@ trait Drupal8UtilsTrait
      */
     public function checkModuleCommand($module, $remote = null, $uri = false)
     {
-        $this->propertiesHelper->readProperties();
+        $this->readProperties();
 
         $drushVersion = $this->taskDrushStack();
         if ($uri) {
