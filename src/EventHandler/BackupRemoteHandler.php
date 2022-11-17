@@ -2,6 +2,7 @@
 
 namespace DigipolisGent\Robo\Drupal8\EventHandler;
 
+use DigipolisGent\CommandBuilder\CommandBuilder;
 use DigipolisGent\Robo\Helpers\EventHandler\DefaultHandler\BackupRemoteHandler as HelpersBackupRemoteHandler;
 use DigipolisGent\Robo\Helpers\Util\RemoteConfig;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
@@ -55,6 +56,8 @@ class BackupRemoteHandler extends HelpersBackupRemoteHandler
                     ->exec((string) $dbBackup);
             }
         }
+        $event->stopPropagation();
+
         return $collection;
     }
 }
