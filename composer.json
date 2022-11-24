@@ -37,5 +37,10 @@
             "name": "Maarten Segers",
             "email": "maarten.segers@digipolis.gent"
         }
-    ]
+    ],
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
 }
