@@ -1,6 +1,6 @@
 <?php
 
-namespace DigipolisGent\Robo\Helpers\EventHandler\DefaultHandler;
+namespace DigipolisGent\Robo\Drupal8\EventHandler;
 
 use DigipolisGent\CommandBuilder\CommandBuilder;
 use DigipolisGent\Robo\Helpers\EventHandler\DefaultHandler\PreRestoreBackupRemoteHandler as PreRestoreBackupRemoteHandlerBase;
