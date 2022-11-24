@@ -31,6 +31,17 @@ class DigipolisDrupal8SyncCommand extends Tasks implements CustomEventAwareInter
      * @param string $destinationApp
      *   The name of the destination app we're syncing. Used to determine the
      *   directory to sync to.
+     *
+     * @option files Whether or not to sync the files between environments. When
+     *   both this and the "data" option is omitted, both are synced.
+     * @option data Whether or not to sync the database between environments.
+     *   When both this and the "files" option is omitted, both are synced.
+     * @option rsync Whether or not to use rsync to sync the files between the
+     *   environments. Defaults to true. When set to false, a tar is created of
+     *   the files, downloaded to the machine this command executes on, and then
+     *   uploaded and extracted on the other environment.
+     *
+     * @command digipolis:sync-drupal8
      */
     public function digipolisSyncDrupal8(
         $sourceUser,
@@ -41,7 +52,7 @@ class DigipolisDrupal8SyncCommand extends Tasks implements CustomEventAwareInter
         $destinationKeyFile,
         $sourceApp = 'default',
         $destinationApp = 'default',
-        $opts = ['files' => false, 'data' => false]
+        $opts = ['files' => false, 'data' => false, 'rsync' => true]
     ) {
         return $this->sync(
             $sourceUser,

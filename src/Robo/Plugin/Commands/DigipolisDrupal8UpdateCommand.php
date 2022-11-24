@@ -23,7 +23,8 @@ class DigipolisDrupal8UpdateCommand extends Tasks implements CustomEventAwareInt
      *   The options for this command.
      *
      * @option config-import Import configuration after installing the site.
-     * @option existing-config Install the site from existing configuration.
+     * @option uri The uri of the site we're updating, primarily used for multi-
+     *   site installations.
      *
      * @command digipolis:update-drupal8
      */

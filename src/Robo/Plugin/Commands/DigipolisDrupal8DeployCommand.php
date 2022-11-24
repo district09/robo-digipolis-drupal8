@@ -26,7 +26,7 @@ class DigipolisDrupal8DeployCommand extends Tasks implements CustomEventAwareInt
      * @option site-name The Drupal site name in case we need to install it.
      * @option profile The machine name of the profile we need to use when
      *   installing.
-     * @options force-install Force a new isntallation of the Drupal8 site. This
+     * @option force-install Force a new isntallation of the Drupal8 site. This
      *   will drop all tables in the current database.
      * @option config-import Import configuration after updating the site.
      * @option existing-config Import configuration when installing the site.
@@ -47,7 +47,6 @@ class DigipolisDrupal8DeployCommand extends Tasks implements CustomEventAwareInt
             'config-import' => false,
             'existing-config' => false,
             'worker' => null,
-            'ssh-verbose' => false,
         ]
     ) {
         return $this->deploy($arguments, $opts);

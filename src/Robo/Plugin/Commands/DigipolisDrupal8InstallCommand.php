@@ -33,6 +33,14 @@ class DigipolisDrupal8InstallCommand extends Tasks implements CustomEventAwareIn
      *   current database.
      * @option config-import Import configuration after installing the site.
      * @option existing-config Install the site from existing configuration.
+     * @option account-name Account name for the admin account to use during
+     *   install.
+     * @option account-mail Account mail for the admin account to use during
+     *   install.
+     * @option account-pass Account password for the admin account to use during
+     *   install. Default to a randomly generated password.
+     * @option uri The uri of the site we're installing, primarily used for
+     *   multi-site installations.
      *
      * @command digipolis:install-drupal8
      */
