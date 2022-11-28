@@ -2,8 +2,13 @@
 
 namespace DigipolisGent\Robo\Drupal8\EventHandler;
 
+use Consolidation\AnnotatedCommand\CommandError;
+use DigipolisGent\CommandBuilder\CommandBuilder;
 use DigipolisGent\Robo\Helpers\EventHandler\AbstractTaskEventHandler;
+use Robo\Collection\CollectionBuilder;
 use Robo\Contract\ConfigAwareInterface;
+use SecurityLibTest\Mocks\Factory;
+use SecurityLibTest\Mocks\Strength;
 
 abstract class Drupal8Handler extends AbstractTaskEventHandler implements ConfigAwareInterface
 {
