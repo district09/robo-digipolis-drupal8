@@ -1,26 +1,13 @@
 <?php
 
-namespace DigipolisGent\Robo\Drupal8\Util;
+namespace DigipolisGent\Robo\Drupal8\Traits;
 
-use DigipolisGent\Robo\Helpers\Util\RemoteHelper as RemoteHelperBase;
-
-class RemoteHelper extends RemoteHelperBase
+trait AliasesHelper
 {
 
-    public function getRemoteSettings($host, $user, $keyFile, $app, $timestamp = null)
+    protected function getAliases($remoteSettings = [])
     {
-        $settings = parent::getRemoteSettings($host, $user, $keyFile, $app, $timestamp);
-        $settings['aliases'] = $this->parseSiteAliases($settings);
-
-        return $settings;
-    }
-
-    public function parseSiteAliases($remote = null) {
-        // Allow having aliases defined in properties.yml. If non are set, try
-        // parsing them from sites.php
-        $this->propertiesHelper->readProperties();
-        $remote = $remote ?? $this->getConfig()->get('remote');
-        $aliases = isset($remote['aliases']) ? $remote['aliases'] : [];
+        $aliases = isset($remoteSettings['aliases']) ? $remoteSettings['aliases'] : [];
         $sitesFile = $this->getConfig()->get('digipolis.root.web', false) . '/sites/sites.php';
         if (!file_exists($sitesFile)) {
             return $aliases;

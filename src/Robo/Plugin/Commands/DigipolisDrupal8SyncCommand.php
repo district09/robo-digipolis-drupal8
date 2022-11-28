@@ -2,23 +2,13 @@
 
 namespace DigipolisGent\Robo\Drupal8\Robo\Plugin\Commands;
 
-use Consolidation\AnnotatedCommand\AnnotationData;
-use Consolidation\AnnotatedCommand\CommandError;
 use Consolidation\AnnotatedCommand\Events\CustomEventAwareInterface;
-use Consolidation\AnnotatedCommand\Events\CustomEventAwareTrait;
-use DigipolisGent\CommandBuilder\CommandBuilder;
-use DigipolisGent\Robo\Helpers\Traits\DigipolisHelpersCommandUtilities;
-use DigipolisGent\Robo\Helpers\Traits\EventDispatcher;
-use RandomLib\Factory;
 use Robo\Tasks;
-use SecurityLib\Strength;
-use Symfony\Component\Console\Input\InputInterface;
 
-class DigipolisDrupal8Commands extends Tasks implements CustomEventAwareInterface
+class DigipolisDrupal8SyncCommand extends Tasks implements CustomEventAwareInterface
 {
 
-    use \DigipolisGent\Robo\Helpers\Traits\DigipolisHelpersDeployCommandUtilities;
-    use \Boedah\Robo\Task\Drush\loadTasks;
+    use \DigipolisGent\Robo\Helpers\Traits\DigipolisHelpersSyncCommandUtilities;
 
     /**
      * Sync the database and files between two Drupal 8 sites.
@@ -41,6 +31,17 @@ class DigipolisDrupal8Commands extends Tasks implements CustomEventAwareInterfac
      * @param string $destinationApp
      *   The name of the destination app we're syncing. Used to determine the
      *   directory to sync to.
+     *
+     * @option files Whether or not to sync the files between environments. When
+     *   both this and the "data" option is omitted, both are synced.
+     * @option data Whether or not to sync the database between environments.
+     *   When both this and the "files" option is omitted, both are synced.
+     * @option rsync Whether or not to use rsync to sync the files between the
+     *   environments. Defaults to true. When set to false, a tar is created of
+     *   the files, downloaded to the machine this command executes on, and then
+     *   uploaded and extracted on the other environment.
+     *
+     * @command digipolis:sync-drupal8
      */
     public function digipolisSyncDrupal8(
         $sourceUser,
@@ -51,13 +52,9 @@ class DigipolisDrupal8Commands extends Tasks implements CustomEventAwareInterfac
         $destinationKeyFile,
         $sourceApp = 'default',
         $destinationApp = 'default',
-        $opts = ['files' => false, 'data' => false]
+        $opts = ['files' => false, 'data' => false, 'rsync' => true]
     ) {
-        if (!$opts['files'] && !$opts['data']) {
-            $opts['files'] = true;
-            $opts['data'] = true;
-        }
-        return $this->syncTaskFactory->syncTask(
+        return $this->sync(
             $sourceUser,
             $sourceHost,
             $sourceKeyFile,
@@ -69,5 +66,4 @@ class DigipolisDrupal8Commands extends Tasks implements CustomEventAwareInterfac
             $opts
         );
     }
-
 }
