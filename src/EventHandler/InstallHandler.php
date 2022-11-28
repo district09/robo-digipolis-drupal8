@@ -59,7 +59,6 @@ class InstallHandler extends AbstractTaskEventHandler
                 ->remoteDirectory($currentProjectRoot, true)
                 // Install can take a long time. Let's set it to 15 minutes.
                 ->timeout(900)
-                ->verbose($options['ssh-verbose'])
                 ->exec((string) $install);
         }
 
