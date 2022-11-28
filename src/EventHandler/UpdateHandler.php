@@ -48,7 +48,6 @@ class UpdateHandler extends AbstractTaskEventHandler
                     ->remoteDirectory($currentProjectRoot, true)
                     // Updates can take a long time. Let's set it to 15 minutes.
                     ->timeout(900)
-                    ->verbose($options['ssh-verbose'])
                     ->exec((string) $aliasUpdate);
         }
         return $collection;
