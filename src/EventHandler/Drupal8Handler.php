@@ -5,10 +5,10 @@ namespace DigipolisGent\Robo\Drupal8\EventHandler;
 use Consolidation\AnnotatedCommand\CommandError;
 use DigipolisGent\CommandBuilder\CommandBuilder;
 use DigipolisGent\Robo\Helpers\EventHandler\AbstractTaskEventHandler;
+use RandomLib\Factory;
 use Robo\Collection\CollectionBuilder;
 use Robo\Contract\ConfigAwareInterface;
-use SecurityLibTest\Mocks\Factory;
-use SecurityLibTest\Mocks\Strength;
+use SecurityLib\Strength;
 
 abstract class Drupal8Handler extends AbstractTaskEventHandler implements ConfigAwareInterface
 {
@@ -19,8 +19,6 @@ abstract class Drupal8Handler extends AbstractTaskEventHandler implements Config
     use \Robo\Task\Filesystem\Tasks;
     use \Boedah\Robo\Task\Drush\loadTasks;
     use \DigipolisGent\Robo\Drupal8\Traits\Drupal8UtilsTrait;
-
-
 
     protected function getDatabaseConfig(array $aliases, ?string $uri = null): array
     {
