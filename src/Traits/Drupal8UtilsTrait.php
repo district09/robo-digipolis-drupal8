@@ -8,18 +8,14 @@ use Symfony\Component\Yaml\Yaml;
 
 trait Drupal8UtilsTrait
 {
-    public function getSiteUuid($uri = false)
+    public function getSiteUuid($uri = false, $aliases = [])
     {
+        $aliases ??= [0 => false];
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
         if (!$webDir) {
             $this->say('Could not get site UUID. No webroot found.');
             return false;
         }
-        $roboSettings = $this->getConfig()->get('remote');
-        if (!isset($roboSettings['aliases'])) {
-            $settings['aliases'] = $this->handleEvent('digipolis-drupal8:parse-site-aliases', ['remoteSettings' => null]);
-        }
-        $aliases = $settings['aliases'] ?: [0 => false];
         $finder = new Finder();
         $subdir = ($uri ? '/' . $aliases[$uri] : '');
         $this->say('Searching for settings.php in ' . $webDir . '/sites' . $subdir . ' and subdirectories.');

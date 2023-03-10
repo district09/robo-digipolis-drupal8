@@ -23,7 +23,7 @@ class UpdateDrupal8Handler extends Drupal8Handler
         $collection = $this->collectionBuilder();
         $this->addEnableMaintenanceModeTask($collection, $uri);
         $this->addDatabaseUpdateTask($collection, $uri);
-        $this->addConfigImportTask($collection, $options, $uri);
+        $this->addConfigImportTask($collection, $options, $uri, $aliases);
         $this->addLocaleUpdateTask($collection, $uri);
         $this->addVarnishCheckTask($collection, $uri);
         $this->addDisableMaintenanceModeTask($collection, $uri);
