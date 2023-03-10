@@ -15,9 +15,13 @@ trait Drupal8UtilsTrait
             $this->say('Could not get site UUID. No webroot found.');
             return false;
         }
-
+        $roboSettings = $this->getConfig()->get('remote');
+        if (!isset($roboSettings['aliases'])) {
+            $settings['aliases'] = $this->handleEvent('digipolis-drupal8:parse-site-aliases', ['remoteSettings' => null]);
+        }
+        $aliases = $settings['aliases'] ?: [0 => false];
         $finder = new Finder();
-        $subdir = ($uri ? '/' . $this->remoteHelper->parseSiteAliases()[$uri] : '');
+        $subdir = ($uri ? '/' . $aliases[$uri] : '');
         $this->say('Searching for settings.php in ' . $webDir . '/sites' . $subdir . ' and subdirectories.');
         $finder->in($webDir . '/sites' . $subdir)->files()->name('settings.php');
         $config_directories = [];
