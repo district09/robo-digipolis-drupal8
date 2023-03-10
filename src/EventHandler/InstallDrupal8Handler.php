@@ -24,7 +24,7 @@ class InstallDrupal8Handler extends Drupal8Handler
         $collection = $this->collectionBuilder();
         $this->addDropDatabaseRollbackTask($collection, $uri);
         $this->addDrushInstallTask($collection, $options, $aliases, $profile, $uri);
-        $this->addConfigImportTask($collection, $options, $uri);
+        $this->addConfigImportTask($collection, $options, $uri, $aliases);
         $this->addLocaleUpdateTask($collection, $uri);
         $this->addVarnishCheckTask($collection, $uri);
         $this->addDisableMaintenanceModeTask($collection, $uri);

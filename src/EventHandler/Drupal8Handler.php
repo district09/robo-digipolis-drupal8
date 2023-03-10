@@ -70,7 +70,7 @@ abstract class Drupal8Handler extends AbstractTaskEventHandler implements Config
             ->generateString(16);
     }
 
-    protected function addConfigImportTask(CollectionBuilder $collection, array $options, ?string $uri = null)
+    protected function addConfigImportTask(CollectionBuilder $collection, array $options, ?string $uri = null, array $aliases = [])
     {
         if ($options['config-import']) {
             $collection->taskDrushStack('vendor/bin/drush');
@@ -78,7 +78,7 @@ abstract class Drupal8Handler extends AbstractTaskEventHandler implements Config
                 $collection->uri($uri);
             }
             $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
-            $uuid = $this->getSiteUuid($uri);
+            $uuid = $this->getSiteUuid($uri, $aliases);
             if ($uuid) {
                 $collection->drush('cset system.site uuid ' . $uuid);
             }
