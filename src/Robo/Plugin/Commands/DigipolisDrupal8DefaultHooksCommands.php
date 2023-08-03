@@ -27,18 +27,18 @@ class DigipolisDrupal8DefaultHooksCommands extends Tasks implements ConfigAwareI
     use \DigipolisGent\Robo\Task\General\Tasks;
     use \DigipolisGent\Robo\Helpers\Traits\EventDispatcher;
     use \Consolidation\AnnotatedCommand\Events\CustomEventAwareTrait;
+    use \DigipolisGent\Robo\Helpers\Traits\DigipolisHelpersCommandUtilities;
 
     /**
      * @hook on-event digipolis-db-config
      */
     public function defaultDbConfig()
     {
-        $this->readProperties();
+        $settings = $this->getRemoteSettings(null, null, null, null);
         $webDir = $this->getConfig()->get('digipolis.root.web', false);
         if (!$webDir) {
             return false;
         }
-        $settings = $this->getConfig()->get('remote');
         if (!isset($settings['aliases'])) {
             $settings['aliases'] = $this->handleEvent('digipolis-drupal8:parse-site-aliases', ['remoteSettings' => null]);
         }
