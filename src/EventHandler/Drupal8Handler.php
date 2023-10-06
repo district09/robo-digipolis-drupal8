@@ -73,17 +73,36 @@ abstract class Drupal8Handler extends AbstractTaskEventHandler implements Config
     protected function addConfigImportTask(CollectionBuilder $collection, array $options, ?string $uri = null, array $aliases = [])
     {
         if ($options['config-import']) {
-            $collection->taskDrushStack('vendor/bin/drush');
+            $drushBase = CommandBuilder::create('vendor/bin/drush');
             if ($uri) {
-                $collection->uri($uri);
+                $drushBase->addOption('uri', $uri);
             }
-            $collection->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
+            $drushBase->addFlag('r', $this->getConfig()->get('digipolis.root.web'));
             $uuid = $this->getSiteUuid($uri, $aliases);
             if ($uuid) {
-                $collection->drush('cset system.site uuid ' . $uuid);
+                $collection->taskExec(
+                    (string)(clone $drushBase)
+                        ->addArgument('cset')
+                        ->addArgument('system.site')
+                        ->addArgument('uuid')
+                        ->addArgument($uuid)
+                        ->addFlag('y')
+                );
             }
-            $collection
-                ->drush('cim');
+            foreach ($this->getLanguageUuids($uri, $aliases) as $langcode => $uuid) {
+                $collection->taskExec(
+                    (string) CommandBuilder::create(
+                        (clone $drushBase)
+                            ->addArgument('cset')
+                            ->addArgument('language.entity.' . $langcode)
+                            ->addArgument('uuid')
+                            ->addArgument($uuid)
+                            ->addFlag('y')
+                    )
+                    ->onFailure('echo')->addArgument('Could not update uuid of language "' . $langcode . '"')
+                );
+            }
+            $collection->taskExec((string)(clone $drushBase)->addArgument('cim')->addFlag('y'));
         }
     }
 
