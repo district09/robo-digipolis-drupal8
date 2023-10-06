@@ -39,6 +39,46 @@ trait Drupal8UtilsTrait
         return $siteSettings['uuid'];
     }
 
+    public function getLanguageUuids($uri = false, $aliases = [])
+    {
+        $aliases ??= [0 => false];
+        $webDir = $this->getConfig()->get('digipolis.root.web', false);
+        if (!$webDir) {
+            $this->say('Could not get language UUIDs. No webroot found.');
+            return [];
+        }
+        $finder = new Finder();
+        $subdir = ($uri ? '/' . $aliases[$uri] : '');
+        $this->say('Searching for settings.php in ' . $webDir . '/sites' . $subdir . ' and subdirectories.');
+        $finder->in($webDir . '/sites' . $subdir)->files()->name('settings.php');
+        $config_directories = [];
+        $settings = [];
+        foreach ($finder as $settingsFile) {
+            $app_root = $webDir;
+            $site_path = 'sites' . $subdir;
+            $this->say('Loading settings from ' . $settingsFile->getRealpath() . '.');
+            include $settingsFile->getRealpath();
+            break;
+        }
+        if (!isset($settings['config_sync_directory']) && !isset($config_directories['sync'])) {
+            $this->say('Could not get language UUIDs. No sync directory set.');
+            return [];
+        }
+
+        $sync = $webDir . '/' . ($settings['config_sync_directory'] ?? $config_directories['sync']);
+        $languageFinder = new Finder();
+        $languageFinder->in($sync)->name('/language\.entity\.[^\.]+\.yml/')->files();
+        $languages = [];
+        foreach($languageFinder as $language) {
+            $languageYaml = Yaml::parse(file_get_contents($language->getRealPath()));
+            if (!isset($languageYaml['uuid'])) {
+              continue;
+            }
+            $languages[$languageYaml['id']] = $languageYaml['uuid'];
+        }
+        return $languages;
+    }
+
     /**
      * Get the command to check if the page_cache module and varnish are not
      * enabled simultaneously. Command differs for Drush 9 vs Drush 8.
