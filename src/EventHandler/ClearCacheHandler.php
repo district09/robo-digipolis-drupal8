@@ -27,7 +27,7 @@ class ClearCacheHandler extends AbstractTaskEventHandler implements ConfigAwareI
         /** @var RemoteConfig $remoteConfig */
         $remoteConfig = $event->getArgument('remoteConfig');
         $remoteSettings = $remoteConfig->getRemoteSettings();
-        $currentProjectRoot = $remoteConfig->getCurrentProjectRoot();
+        $currentProjectRoot = $currentWebRoot = $remoteSettings['currentdir'] . '/..';
         $aliases = $remoteSettings['aliases'] ?: [0 => false];
         $collection = $this->collectionBuilder();
         $auth = new KeyFile($remoteConfig->getUser(), $remoteConfig->getPrivateKeyFile());
