@@ -27,23 +27,23 @@ class ClearCacheHandler extends AbstractTaskEventHandler implements ConfigAwareI
         /** @var RemoteConfig $remoteConfig */
         $remoteConfig = $event->getArgument('remoteConfig');
         $remoteSettings = $remoteConfig->getRemoteSettings();
-        $currentWebRoot = $remoteSettings['currentdir'];
+        $currentProjectRoot = $remoteConfig->getCurrentProjectRoot();
         $aliases = $remoteSettings['aliases'] ?: [0 => false];
         $collection = $this->collectionBuilder();
         $auth = new KeyFile($remoteConfig->getUser(), $remoteConfig->getPrivateKeyFile());
         foreach ($aliases as $uri => $alias) {
-            $drushCommand = CommandBuilder::create('../vendor/bin/drush');
+            $drushCommand = CommandBuilder::create('vendor/bin/drush');
             if ($alias) {
                 $drushCommand->addOption('uri', $uri);
             }
             $collection->taskSsh($remoteConfig->getHost(), $auth)
-                ->remoteDirectory($currentWebRoot, true)
+                ->remoteDirectory($currentProjectRoot, true)
                 ->timeout(120)
                 ->exec((string) (clone $drushCommand)->addArgument('cr'))
                 ->exec((string) (clone $drushCommand)->addArgument('cc')->addArgument('drush'));
 
             $purge = $this->taskSsh($remoteConfig->getHost(), $auth)
-                ->remoteDirectory($currentWebRoot, true)
+                ->remoteDirectory($currentProjectRoot, true)
                 ->timeout(120)
                 // Check if the drush_purge module is enabled and if an 'everything'
                 // purger is configured.
@@ -51,7 +51,7 @@ class ClearCacheHandler extends AbstractTaskEventHandler implements ConfigAwareI
                     (string) $this->checkModuleCommand('purge_drush', $remoteSettings, $uri)
                         ->onSuccess('cd')
                             ->addFlag('P')
-                            ->addArgument($currentWebRoot)
+                            ->addArgument($currentProjectRoot)
                         ->onSuccess(
                             (clone $drushCommand)
                                 ->addArgument('ptyp')

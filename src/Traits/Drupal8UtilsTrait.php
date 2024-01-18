@@ -89,7 +89,7 @@ trait Drupal8UtilsTrait
     {
         $this->readProperties();
 
-        $drushVersion = $this->taskDrushStack()
+        $drushVersion = $this->taskDrushStack('vendor/bin/drush')
             ->drupalRootDirectory($this->getConfig()->get('digipolis.root.web'));
         if ($uri) {
             $drushVersion->uri($uri);
@@ -136,7 +136,7 @@ trait Drupal8UtilsTrait
     {
         $this->readProperties();
 
-        $drushVersion = $this->taskDrushStack();
+        $drushVersion = $this->taskDrushStack('vendor/bin/drush');
         if ($uri) {
             $drushVersion->uri($uri);
         }
