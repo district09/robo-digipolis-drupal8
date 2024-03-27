@@ -25,6 +25,7 @@ class IsSiteInstalledHandler extends AbstractTaskEventHandler
      */
     public function handle(GenericEvent $event)
     {
+        $event->stopPropagation();
         /** @var RemoteConfig $remoteConfig */
         $remoteConfig = $event->getArgument('remoteConfig');
         $remoteSettings = $remoteConfig->getRemoteSettings();
