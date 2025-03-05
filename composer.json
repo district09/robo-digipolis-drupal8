@@ -5,7 +5,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "digipolisgent/robo-digipolis-helpers": "^4.0",
+        "digipolisgent/robo-digipolis-helpers": "^5.0",
         "digipolisgent/robo-digipolis-package-drupal8": "^1.0",
         "digipolisgent/robo-drush": "^5.0",
         "ircmaxell/random-lib": "^1.2"
