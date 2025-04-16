@@ -57,7 +57,7 @@ abstract class Drupal8Handler extends AbstractTaskEventHandler implements Config
             . '/' . $databaseConfig['database'];
     }
 
-    protected function getAccountPassword(string $default = null)
+    protected function getAccountPassword(?string $default = null)
     {
         if ($default) {
             return $default;
@@ -90,16 +90,23 @@ abstract class Drupal8Handler extends AbstractTaskEventHandler implements Config
                 );
             }
             foreach ($this->getLanguageUuids($uri, $aliases) as $langcode => $uuid) {
-                $collection->taskExec(
-                    (string) CommandBuilder::create(
-                        (clone $drushBase)
-                            ->addArgument('cset')
-                            ->addArgument('language.entity.' . $langcode)
-                            ->addArgument('uuid')
-                            ->addArgument($uuid)
-                            ->addFlag('y')
+                $languageCommand = CommandBuilder::create(
+                    (clone $drushBase)
+                        ->addArgument('cget')
+                        ->addArgument('language.entity.' . $langcode)
+                )->onSuccess(CommandBuilder::create(
+                    (clone $drushBase)
+                        ->addArgument('cset')
+                        ->addArgument('language.entity.' . $langcode)
+                        ->addArgument('uuid')
+                        ->addArgument($uuid)
+                        ->addFlag('y')
                     )
                     ->onFailure('echo')->addArgument('Could not update uuid of language "' . $langcode . '"')
+                )->onFailure('echo')->addArgument('Language "' . $langcode . '" not installed, not updating uuid.');
+
+                $collection->taskExec(
+                    (string) $languageCommand
                 );
             }
             $collection->taskExec((string)(clone $drushBase)->addArgument('cim')->addFlag('y'));
