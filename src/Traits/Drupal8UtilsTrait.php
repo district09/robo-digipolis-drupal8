@@ -123,7 +123,7 @@ trait Drupal8UtilsTrait
         if ($uri) {
             $command->addOption('uri', $uri);
         }
-        return $command->addArgument('sql-query')->addArgument('SHOW TABLES')->pipeOutputTo('grep')->addArgument('users');
+        return $command->addArgument('php:eval')->addArgument("echo \\Drupal::database()->query('SELECT COUNT(*) from {users}')->fetchField() > 0 ? 1 : 0;")->pipeOutputTo('grep')->addFlag('v', 0);
     }
 
     /**
