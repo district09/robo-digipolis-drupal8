@@ -35,7 +35,7 @@ abstract class Drupal8Handler extends AbstractTaskEventHandler implements Config
             include $site_path . '/settings.local.php';
         }
         else {
-            return new CommandError('No settings file found.');
+            throw new \Exception('No settings file found.');
         }
 
         return $databases['default']['default'];
