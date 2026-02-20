@@ -2,12 +2,11 @@
 
 namespace DigipolisGent\Robo\Drupal8\EventHandler;
 
-use DigipolisGent\Robo\Helpers\EventHandler\AbstractTaskEventHandler;
 use DigipolisGent\Robo\Helpers\Util\RemoteConfig;
 use DigipolisGent\Robo\Task\Deploy\Ssh\Auth\KeyFile;
 use Symfony\Component\EventDispatcher\GenericEvent;
 
-class IsSiteInstalledHandler extends AbstractTaskEventHandler
+class IsSiteInstalledHandler extends Drupal8Handler
 {
 
     use \DigipolisGent\Robo\Task\Deploy\Tasks;
@@ -39,9 +38,11 @@ class IsSiteInstalledHandler extends AbstractTaskEventHandler
         $aliases = $remoteSettings['aliases'] ?: [0 => false];
         foreach ($aliases as $uri => $alias) {
             $currentWebRoot = $remoteSettings['currentdir'];
+            $dbSettings = $this->getDatabaseConfig($aliases, $uri);
+            $prefix = $dbSettings['prefix'] ?? '';
             $result = $this->taskSsh($remoteConfig->getHost(), new KeyFile($remoteConfig->getUser(), $remoteConfig->getPrivateKeyFile()))
                 ->remoteDirectory($currentWebRoot, true)
-                ->exec((string) $this->usersTableCheckCommand('../vendor/bin/drush', $uri))
+                ->exec((string) $this->usersTableCheckCommand('../vendor/bin/drush', $uri, $prefix))
                 ->exec('[[ -f ' . escapeshellarg($currentWebRoot . '/sites/' . ($alias ?: 'default') . '/settings.php') . ' ]] || exit 1')
                 ->stopOnFail()
                 ->timeout(300)

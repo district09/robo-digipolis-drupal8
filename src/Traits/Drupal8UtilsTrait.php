@@ -117,13 +117,13 @@ trait Drupal8UtilsTrait
      *
      * @return string
      */
-    public function usersTableCheckCommand($drush, $uri = '')
+    public function usersTableCheckCommand($drush, $uri = '', $prefix = '')
     {
         $command = CommandBuilder::create($drush);
         if ($uri) {
             $command->addOption('uri', $uri);
         }
-        return $command->addArgument('sql-query')->addArgument('SHOW TABLES')->pipeOutputTo('grep')->addArgument('users');
+        return $command->addArgument('sql-query')->addArgument('SHOW TABLES')->pipeOutputTo('grep')->addArgument($prefix . 'users');
     }
 
     /**
