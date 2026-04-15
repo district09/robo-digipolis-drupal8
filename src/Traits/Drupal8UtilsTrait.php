@@ -123,7 +123,7 @@ trait Drupal8UtilsTrait
         if ($uri) {
             $command->addOption('uri', $uri);
         }
-        return $command->addArgument('core:status')->addFlag('fields', 'bootstrap')->addFlag('format', 'string')->pipeOutputTo('grep')->addFlag('i', 'successful');
+        return $command->addArgument('core:status')->addOption('fields', 'bootstrap')->addOption('format', 'string')->pipeOutputTo('grep')->addFlag('i')->addArgument('successful');
     }
 
     /**
